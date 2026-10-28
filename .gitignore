@@ -1,0 +1,26 @@
+# 테스트 음원과 실제 음원
+test-audio/
+*.mp3
+*.m4a
+*.flac
+*.wav
+*.ogg
+
+# 이미지 작업 중간 파일(앱에서 쓰지 않음)
+assets/_work/
+assets/_master/
+tools/out/
+tools/_preview/
+*.psd
+
+# 비밀 값
+.env
+*.key
+
+# 운영체제·편집기
+.DS_Store
+Thumbs.db
+__pycache__/
+node_modules/
+.omc/
+.playwright-mcp/

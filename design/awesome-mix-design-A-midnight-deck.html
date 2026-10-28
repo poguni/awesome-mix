@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시안 A · Midnight Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&amp;family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@500&amp;family=Nanum+Pen+Script&amp;family=Permanent+Marker&amp;family=VT323&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0D0D0E}
+a{color:#FFB547}a:hover{color:#FFD08A}
+@keyframes md-spin{to{transform:rotate(-360deg)}}
+.md-reel{animation:md-spin 2s linear infinite}
+button{font-family:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid #FFB547;outline-offset:2px}
+@media (max-width:760px){.md-phones{display:none}}
+@media (prefers-reduced-motion:reduce){.md-reel{animation:none}}
+</style>
+</head>
+<body>
+<div id="dc-root"></div>
+<template id="dc-template">
+<div style="min-height: 100vh; background: #0D0D0E; color: #ECE7DF; font-family: 'IBM Plex Sans KR', sans-serif; font-size: 15px; line-height: 1.55">
+<div style="max-width: 1360px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 40px) 56px; display: flex; flex-direction: column; gap: 24px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; align-items: center; gap: 14px">
+<div aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: #1E1E22; border: 1px solid #2C2C31; display: flex; align-items: center; justify-content: center">
+<div style="width: 22px; height: 14px; border-radius: 3px; border: 2px solid {{accent}}; display: flex; align-items: center; justify-content: space-around; padding: 0 2px; box-sizing: border-box">
+<div style="width: 4px; height: 4px; border-radius: 50%; background: {{accent}}"></div>
+<div style="width: 4px; height: 4px; border-radius: 50%; background: {{accent}}"></div>
+</div>
+</div>
+<div>
+<div style="font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.3em; line-height: 1.1">AWESOME MIX</div>
+<div style="font-size: 12px; color: #9A958C; letter-spacing: 0.04em">STEREO TAPE DECK · 로컬 MP3 플레이어</div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<button type="button" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #3A3A40; background: transparent; color: #ECE7DF; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+폴더 열기
+</button>
+<button type="button" onClick="{{toggleHiss}}" aria-pressed="{{hissPressed}}" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #3A3A40; background: #17171A; color: #ECE7DF; font-family: 'Archivo Narrow', sans-serif; font-weight: 600; letter-spacing: 0.16em; font-size: 13px; display: flex; align-items: center; gap: 10px; cursor: pointer">
+<span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; {{hissLed}}"></span>HISS
+</button>
+<button type="button" onClick="{{toggleWow}}" aria-pressed="{{wowPressed}}" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #3A3A40; background: #17171A; color: #ECE7DF; font-family: 'Archivo Narrow', sans-serif; font-weight: 600; letter-spacing: 0.16em; font-size: 13px; display: flex; align-items: center; gap: 10px; cursor: pointer">
+<span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; {{wowLed}}"></span>WOW &amp; FLUTTER
+</button>
+<button type="button" aria-label="설정" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #3A3A40; background: transparent; color: #ECE7DF; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+</button>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch">
+
+<section aria-label="테이프 데크" style="flex: 999 1 640px; min-width: 0; position: relative; background: #17171A; border: 1px solid #2A2A2F; border-radius: 28px; padding: clamp(18px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-right: 150px">
+<div style="font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.32em; color: #9A958C">AUTO REVERSE · TYPE II CHROME · 2 HEAD</div>
+</div>
+
+<div style="background: #0A0A0B; border-radius: 22px; padding: clamp(14px, 3vw, 36px); box-shadow: inset 0 2px 18px rgba(0,0,0,0.8), inset 0 0 0 1px #232327">
+<div style="max-width: 600px; margin: 0 auto; position: relative; width: 100%; aspect-ratio: 560 / 350; container-type: inline-size; background: #24221F; border: 1px solid #3B3833; border-radius: 4.5% / 7.2%; box-shadow: 0 18px 40px rgba(0,0,0,0.55)">
+<div aria-hidden="true" style="position: absolute; left: 2.2%; top: 3.4%; width: 1.6%; aspect-ratio: 1; border-radius: 50%; background: #4A463F"></div>
+<div aria-hidden="true" style="position: absolute; right: 2.2%; top: 3.4%; width: 1.6%; aspect-ratio: 1; border-radius: 50%; background: #4A463F"></div>
+<div aria-hidden="true" style="position: absolute; left: 2.2%; bottom: 4%; width: 1.6%; aspect-ratio: 1; border-radius: 50%; background: #4A463F"></div>
+<div aria-hidden="true" style="position: absolute; right: 2.2%; bottom: 4%; width: 1.6%; aspect-ratio: 1; border-radius: 50%; background: #4A463F"></div>
+
+<div style="position: absolute; left: 6%; right: 6%; top: 6%; height: 30%; background: #EFE6D2; border-radius: 1.4cqw; overflow: hidden; color: #1D2A8C">
+<div style="height: 18%; background: {{accent}}"></div>
+<div style="height: 6%; background: #3FB8A8"></div>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 1.6cqw 3cqw 0">
+<div style="font-family: 'Permanent Marker', cursive; font-size: 5.4cqw; line-height: 1.05; transform: rotate(-1.5deg)">{{tapeTitle}}</div>
+<div style="width: 7cqw; height: 7cqw; border-radius: 50%; border: 0.5cqw solid #1D2A8C; display: flex; align-items: center; justify-content: center; font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-size: 4cqw; color: #1D2A8C">{{side}}</div>
+</div>
+<div style="padding: 0.4cqw 3cqw; font-family: 'Nanum Pen Script', cursive; font-size: 3.4cqw; color: #4A4136">{{tapeNote}}</div>
+</div>
+
+<div aria-hidden="true" style="position: absolute; left: 21%; right: 21%; top: 46%; height: 30%; background: rgba(0,0,0,0.38); border: 1px solid rgba(255,255,255,0.07); border-radius: 2cqw"></div>
+<div aria-hidden="true" style="position: absolute; border-radius: 50%; aspect-ratio: 1; background: repeating-radial-gradient(circle, #2B1B12 0 1.5px, #3A2519 1.5px 3px); box-shadow: 0 0 0 1px rgba(0,0,0,0.5); {{leftPack}}"></div>
+<div aria-hidden="true" style="position: absolute; border-radius: 50%; aspect-ratio: 1; background: repeating-radial-gradient(circle, #2B1B12 0 1.5px, #3A2519 1.5px 3px); box-shadow: 0 0 0 1px rgba(0,0,0,0.5); {{rightPack}}"></div>
+<svg class="md-reel" aria-hidden="true" viewBox="0 0 52 52" style="position: absolute; left: 25.71%; top: 54%; width: 9.29%; {{leftSpin}}"><circle cx="26" cy="26" r="25" fill="#E8E2D6"></circle><circle cx="26" cy="26" r="11" fill="#24221F"></circle><path d="M26 15v-5M26 37v5M15 26h-5M37 26h5M18.2 18.2l-3.5-3.5M33.8 33.8l3.5 3.5" stroke="#24221F" stroke-width="3" stroke-linecap="round"></path></svg>
+<svg class="md-reel" aria-hidden="true" viewBox="0 0 52 52" style="position: absolute; left: 65%; top: 54%; width: 9.29%; {{rightSpin}}"><circle cx="26" cy="26" r="25" fill="#E8E2D6"></circle><circle cx="26" cy="26" r="11" fill="#24221F"></circle><path d="M26 15v-5M26 37v5M15 26h-5M37 26h5M18.2 18.2l-3.5-3.5M33.8 33.8l3.5 3.5" stroke="#24221F" stroke-width="3" stroke-linecap="round"></path></svg>
+
+<div aria-hidden="true" style="position: absolute; left: 24%; right: 24%; bottom: 0; height: 13%; background: #312E29; clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%); display: flex; align-items: center; justify-content: space-around; padding: 0 16%">
+<div style="width: 3cqw; height: 3cqw; border-radius: 50%; background: #0A0A0B"></div>
+<div style="width: 3cqw; height: 3cqw; border-radius: 50%; background: #0A0A0B"></div>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 14px">
+<div role="status" aria-live="polite" style="flex: 1 1 360px; min-width: 0; background: #1A1306; border: 1px solid #3B2B0F; border-radius: 14px; padding: 14px 18px; color: #FFB547; box-shadow: inset 0 0 24px rgba(255,181,71,0.08)">
+<div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em">
+<span>{{lcdSide}}</span><span>{{lcdTime}}</span>
+</div>
+<div style="font-size: 22px; font-weight: 700; line-height: 1.3; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{lcdTitle}}</div>
+<div style="font-size: 14px; color: #D49A45">{{lcdArtist}}</div>
+</div>
+<div style="flex: 0 0 auto; background: #1A1306; border: 1px solid #3B2B0F; border-radius: 14px; padding: 12px 18px; color: #FFB547; display: flex; flex-direction: column; justify-content: center">
+<div style="font-family: 'Archivo Narrow', sans-serif; font-size: 11px; letter-spacing: 0.3em; color: #D49A45">COUNTER</div>
+<div style="font-family: 'VT323', monospace; font-size: 48px; line-height: 1; letter-spacing: 0.08em">{{counter}}</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<button type="button" onClick="{{rew}}" aria-label="되감기" style="height: 72px; border-radius: 14px; border: 1px solid #34343A; background: #232328; color: #ECE7DF; box-shadow: 0 4px 0 #050506; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer">
+<svg aria-hidden="true" width="26" height="18" viewBox="0 0 26 18" fill="currentColor"><path d="M12 1 1 9l11 8zM25 1 14 9l11 8z"></path></svg>
+<span style="font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.24em">REW</span>
+</button>
+<button type="button" onClick="{{play}}" aria-label="재생" aria-pressed="{{playPressed}}" style="height: 72px; border-radius: 14px; border: 1px solid #00000033; background: {{accent}}; color: #1B0F04; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; {{playKey}}">
+<svg aria-hidden="true" width="18" height="20" viewBox="0 0 18 20" fill="currentColor"><path d="M1 1v18l16-9z"></path></svg>
+<span style="font-family: 'Archivo Narrow', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.24em">PLAY</span>
+</button>
+<button type="button" onClick="{{stop}}" aria-label="정지, 한 번 더 누르면 꺼내기" style="height: 72px; border-radius: 14px; border: 1px solid #34343A; background: #232328; color: #ECE7DF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; {{stopKey}}">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><rect x="1" y="1" width="16" height="16" rx="2"></rect></svg>
+<span style="font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.24em">STOP / EJECT</span>
+</button>
+<button type="button" onClick="{{ff}}" aria-label="빨리 감기" style="height: 72px; border-radius: 14px; border: 1px solid #34343A; background: #232328; color: #ECE7DF; box-shadow: 0 4px 0 #050506; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer">
+<svg aria-hidden="true" width="26" height="18" viewBox="0 0 26 18" fill="currentColor"><path d="M1 1l11 8-11 8zM14 1l11 8-11 8z"></path></svg>
+<span style="font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.24em">FF</span>
+</button>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px">
+<label style="display: flex; align-items: center; gap: 12px; flex: 1 1 260px; font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.24em; color: #9A958C">VOLUME
+<input type="range" min="0" max="10" value="7" style="flex: 1; accent-color: #FFB547">
+</label>
+<button type="button" onClick="{{flip}}" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #3A3A40; background: #1E1E22; color: #ECE7DF; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13l-3-3M20 15H7l3 3"></path></svg>
+{{flipLabel}}
+</button>
+</div>
+
+<sc-if value="{{showPhones}}" hint-placeholder-val="{{ true }}">
+<div class="md-phones" aria-hidden="true" style="position: absolute; top: -34px; right: 26px; width: 170px; height: 150px; transform: rotate(9deg)">
+<div style="position: absolute; left: 22px; top: 0; width: 126px; height: 96px; border: 7px solid #8E9298; border-bottom: none; border-radius: 70px 70px 0 0; box-sizing: border-box"></div>
+<div style="position: absolute; left: 0; top: 70px; width: 58px; height: 70px; border-radius: 50%; background-color: {{accent}}; background-image: radial-gradient(rgba(60,20,0,0.28) 1.2px, transparent 1.7px); background-size: 6px 6px; box-shadow: inset -6px -8px 0 rgba(0,0,0,0.18), 0 8px 18px rgba(0,0,0,0.5)"></div>
+<div style="position: absolute; right: 0; top: 70px; width: 58px; height: 70px; border-radius: 50%; background-color: {{accent}}; background-image: radial-gradient(rgba(60,20,0,0.28) 1.2px, transparent 1.7px); background-size: 6px 6px; box-shadow: inset -6px -8px 0 rgba(0,0,0,0.18), 0 8px 18px rgba(0,0,0,0.5)"></div>
+</div>
+</sc-if>
+</section>
+
+<section aria-label="J카드 곡 목록" style="flex: 1 1 380px; min-width: 0; background: #EDE4CF; color: #1C1A17; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<div>
+<div style="font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.3em; color: #5E5446">J-CARD · C60</div>
+<div style="font-family: 'Nanum Pen Script', cursive; font-size: 40px; line-height: 1.05; color: #1D2A8C; margin-top: 4px">{{tapeTitle}}</div>
+</div>
+<div role="tablist" aria-label="테이프 면" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; background: #DCD1B7; padding: 5px; border-radius: 999px">
+<button type="button" role="tab" aria-selected="{{tabASel}}" onClick="{{toA}}" style="height: 44px; border: none; border-radius: 999px; font-family: 'Archivo Narrow', sans-serif; font-weight: 700; letter-spacing: 0.24em; font-size: 13px; cursor: pointer; {{tabA}}">SIDE A</button>
+<button type="button" role="tab" aria-selected="{{tabBSel}}" onClick="{{toB}}" style="height: 44px; border: none; border-radius: 999px; font-family: 'Archivo Narrow', sans-serif; font-weight: 700; letter-spacing: 0.24em; font-size: 13px; cursor: pointer; {{tabB}}">SIDE B</button>
+</div>
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #5E5446"><span>테이프 용량</span><span style="font-family: 'IBM Plex Mono', monospace">{{capText}}</span></div>
+<div style="height: 6px; background: #D6CAAE; border-radius: 999px; margin-top: 6px; overflow: hidden"><div style="height: 100%; background: #1C1A17; border-radius: 999px; {{capBar}}"></div></div>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{tracks}}" as="t" hint-placeholder-count="7">
+<li>
+<button type="button" onClick="{{t.pick}}" style="width: 100%; min-height: 52px; border: none; border-radius: 12px; padding: 8px 12px; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; cursor: pointer; {{t.row}}">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{t.n}}</span>
+<span style="min-width: 0">
+<span style="display: block; font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.title}}</span>
+<span style="display: block; font-size: 13px; {{t.sub}}">{{t.artist}}</span>
+</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{t.d}}</span>
+</button>
+</li>
+</sc-for>
+</ol>
+</section>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px">
+<section aria-label="테이프 선반" style="flex: 999 1 640px; min-width: 0; background: #17171A; border: 1px solid #2A2A2F; border-radius: 28px; padding: 26px 28px 0; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<div style="display: flex; align-items: baseline; gap: 12px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">테이프 선반</h2>
+<span style="font-size: 13px; color: #9A958C">7개 · 라이브러리 214곡</span>
+</div>
+<button type="button" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px dashed #4A4A52; background: transparent; color: #ECE7DF; font-size: 14px; cursor: pointer">+ 새 테이프</button>
+</div>
+<div style="overflow-x: auto">
+<div style="display: flex; align-items: flex-end; gap: 10px; min-height: 300px; padding: 26px 6px 0; border-bottom: 12px solid #3A2A1E; min-width: max-content">
+<sc-for list="{{shelf}}" as="s" hint-placeholder-count="7">
+<button type="button" onClick="{{s.pick}}" aria-label="{{s.aria}}" style="width: 64px; border: none; border-radius: 8px 8px 2px 2px; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s ease; {{s.style}}">
+<span style="font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em">{{s.len}}</span>
+<span style="writing-mode: vertical-rl; font-family: 'Nanum Pen Script', cursive; font-size: 26px; line-height: 1; flex: 1">{{s.name}}</span>
+<sc-if value="{{s.ai}}" hint-placeholder-val="{{ false }}">
+<span style="width: 26px; height: 26px; border-radius: 50%; background: #0D0D0E; color: #3FB8A8; font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-size: 11px; display: flex; align-items: center; justify-content: center">AI</span>
+</sc-if>
+</button>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section aria-label="AI 믹스테이프 큐레이터" style="flex: 1 1 380px; min-width: 0; background: #12201E; border: 1px solid #1F3B37; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">AI 믹스테이프 큐레이터</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #8FD9CE; border: 1px solid #2D5B55; padding: 4px 10px; border-radius: 999px">OpenRouter</span>
+</div>
+<label style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #A9C9C3">어떤 분위기의 테이프를 만들까요?
+<input type="text" value="비 오는 밤, 창밖 불빛 보며 드라이브" style="height: 52px; border-radius: 14px; border: 1px solid #2D5B55; background: #0B1514; color: #ECE7DF; padding: 0 16px; font-size: 15px; font-family: inherit">
+</label>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #2D5B55; background: transparent; color: #CDE9E4; font-size: 13px; cursor: pointer">일요일 아침 커피</button>
+<button type="button" style="min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #2D5B55; background: transparent; color: #CDE9E4; font-size: 13px; cursor: pointer">80년대 신스 러닝</button>
+<button type="button" style="min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #2D5B55; background: transparent; color: #CDE9E4; font-size: 13px; cursor: pointer">라이브러리 자동 분류</button>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<button type="button" style="flex: 1 1 180px; height: 52px; border-radius: 14px; border: none; background: #3FB8A8; color: #06201C; font-size: 15px; font-weight: 700; cursor: pointer">믹스 만들기 · C60</button>
+</div>
+<p style="margin: 0; font-size: 12px; color: #8DB2AB">곡 제목·가수 같은 정보만 보내고, 음원 파일은 내 PC 밖으로 나가지 않아요.</p>
+</section>
+</div>
+
+</div>
+</div>
+</template>
+
+<script>
+/* .dc.html 템플릿을 브라우저에서 그리는 최소 런타임 */
+class DCLogic {
+  constructor(props) { this.props = props || {}; this.state = {}; }
+  setState(patch) {
+    const p = typeof patch === 'function' ? patch(this.state, this.props) : patch;
+    this.state = Object.assign({}, this.state, p);
+    window.__dcRender();
+  }
+  forceUpdate() { window.__dcRender(); }
+}
+</script>
+<script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { playing: true, side: 'A', hiss: true, wow: false, cur: 2, tape: 0 };
+  }
+  renderVals() {
+    const s = this.state;
+    const accent = this.props.accent ?? '#F2772A';
+    const sides = {
+      A: [
+        { t: 'Neon Harbor', a: 'The Velvet Static', d: '3:52' },
+        { t: 'Paper Planets', a: 'Juno & The Tides', d: '4:11' },
+        { t: 'Slow Motion Summer', a: 'Coastline Radio', d: '3:38' },
+        { t: 'Magnetic Heart', a: 'Lila Mercer', d: '4:05' },
+        { t: 'Ride the Static', a: 'Northbound', d: '3:47' },
+        { t: 'Afterglow Avenue', a: 'Mono Bloom', d: '4:26' },
+        { t: 'Rewind to You', a: 'The Cassette Club', d: '4:02' }
+      ],
+      B: [
+        { t: 'Cloudbreak', a: 'Ivory Lane', d: '3:58' },
+        { t: 'Satellite Sunday', a: 'Polaroid Kids', d: '3:41' },
+        { t: 'Velvet Engine', a: 'Marlowe Grey', d: '4:19' },
+        { t: 'Moonlit Freeway', a: 'Sundial', d: '4:33' },
+        { t: 'Little Wild Things', a: 'Hazel & Rome', d: '3:25' },
+        { t: 'Fade Out Slowly', a: 'Echo Park Choir', d: '5:02' }
+      ]
+    };
+    const shelfData = [
+      { name: 'Awesome Mix Vol. 1', c: accent, ink: '#1B0F04', h: 272, len: 'C60', ai: false },
+      { name: '비 오는 밤 드라이브', c: '#3FB8A8', ink: '#06201C', h: 252, len: 'C60', ai: true },
+      { name: 'Sunday Coffee', c: '#EDE4CF', ink: '#1D2A8C', h: 262, len: 'C46', ai: false },
+      { name: "Summer '86", c: '#E8B53A', ink: '#2A1C02', h: 248, len: 'C90', ai: false },
+      { name: '새벽 공부 모드', c: '#7B6CF6', ink: '#FFFFFF', h: 266, len: 'C60', ai: true },
+      { name: 'Road Trip B-Sides', c: '#E25555', ink: '#FFFFFF', h: 256, len: 'C90', ai: false },
+      { name: 'Vol. 2 작업 중', c: '#2C2C31', ink: '#ECE7DF', h: 244, len: 'C60', ai: false }
+    ];
+    const list = sides[s.side];
+    const sec = (d) => { const p = d.split(':'); return Number(p[0]) * 60 + Number(p[1]); };
+    const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+    const total = list.reduce((a, t) => a + sec(t.d), 0);
+    const cur = Math.min(s.cur, list.length - 1);
+    const elapsed = list.slice(0, cur).reduce((a, t) => a + sec(t.d), 0) + 84;
+    const p = Math.min(1, elapsed / total);
+    const hub = 26, max = 80;
+    const rL = Math.sqrt(hub * hub + (1 - p) * (max * max - hub * hub));
+    const rR = Math.sqrt(hub * hub + p * (max * max - hub * hub));
+    const pack = (cx, r) => 'left:' + ((cx - r) / 560 * 100).toFixed(2) + '%;top:' + ((215 - r) / 350 * 100).toFixed(2) + '%;width:' + (2 * r / 560 * 100).toFixed(2) + '%;';
+    const spin = (r) => 'animation-duration:' + (r / hub * 1.3).toFixed(2) + 's;animation-play-state:' + (s.playing ? 'running' : 'paused') + ';';
+    const led = (on) => on ? 'background:#FFB547;box-shadow:0 0 10px #FFB547;' : 'background:#3A3A40;box-shadow:none;';
+    const tab = (on) => on ? 'background:#1C1A17;color:#EDE4CF;' : 'background:transparent;color:#5E5446;';
+    const tape = shelfData[s.tape];
+    return {
+      accent,
+      showPhones: this.props.showPhones ?? true,
+      side: s.side,
+      tapeTitle: tape.name,
+      tapeNote: s.side === 'A' ? '친구에게 · 1986년 여름' : 'B면은 조금 더 느리게',
+      leftPack: pack(170, rL),
+      rightPack: pack(390, rR),
+      leftSpin: spin(rL),
+      rightSpin: spin(rR),
+      lcdSide: 'SIDE ' + s.side + ' · ' + String(cur + 1).padStart(2, '0') + (s.playing ? ' · PLAY' : ' · STOP'),
+      lcdTime: fmt(elapsed) + ' / ' + fmt(total),
+      lcdTitle: list[cur].t,
+      lcdArtist: list[cur].a,
+      counter: String(Math.round(p * 999)).padStart(4, '0'),
+      hissLed: led(s.hiss),
+      wowLed: led(s.wow),
+      hissPressed: String(s.hiss),
+      wowPressed: String(s.wow),
+      playPressed: String(s.playing),
+      playKey: s.playing ? 'transform:translateY(4px);box-shadow:0 0 0 #050506;' : 'box-shadow:0 4px 0 #8A3F0E;',
+      stopKey: s.playing ? 'box-shadow:0 4px 0 #050506;' : 'transform:translateY(4px);box-shadow:0 0 0 #050506;',
+      flipLabel: s.side === 'A' ? 'B면으로 뒤집기' : 'A면으로 뒤집기',
+      tabA: tab(s.side === 'A'),
+      tabB: tab(s.side === 'B'),
+      tabASel: String(s.side === 'A'),
+      tabBSel: String(s.side === 'B'),
+      capText: fmt(total) + ' / 30:00',
+      capBar: 'width:' + Math.min(100, total / 1800 * 100).toFixed(1) + '%;',
+      tracks: list.map((t, i) => ({
+        n: String(i + 1).padStart(2, '0'),
+        title: t.t,
+        artist: t.a,
+        d: t.d,
+        row: i === cur ? 'background:#1C1A17;color:#EDE4CF;' : 'background:transparent;color:#1C1A17;',
+        sub: i === cur ? 'color:#CFC4AC;' : 'color:#5E5446;',
+        pick: () => this.setState({ cur: i, playing: true })
+      })),
+      shelf: shelfData.map((x, i) => ({
+        name: x.name,
+        len: x.len,
+        ai: x.ai,
+        aria: x.name + (x.ai ? ', AI가 만든 테이프' : '') + (i === s.tape ? ', 데크에 들어 있음' : ''),
+        style: 'height:' + x.h + 'px;background:' + x.c + ';color:' + x.ink + ';' + (i === s.tape ? 'transform:translateY(-18px);box-shadow:0 0 0 3px #0D0D0E, 0 0 0 5px ' + accent + ';' : 'box-shadow:inset -6px 0 0 rgba(0,0,0,0.12);'),
+        pick: () => this.setState({ tape: i, cur: 0, side: 'A', playing: true })
+      })),
+      play: () => this.setState({ playing: true }),
+      stop: () => this.setState({ playing: false }),
+      rew: () => this.setState({ cur: Math.max(0, cur - 1) }),
+      ff: () => this.setState({ cur: Math.min(list.length - 1, cur + 1) }),
+      flip: () => this.setState({ side: s.side === 'A' ? 'B' : 'A', cur: 0 }),
+      toA: () => this.setState({ side: 'A', cur: 0 }),
+      toB: () => this.setState({ side: 'B', cur: 0 }),
+      toggleHiss: () => this.setState({ hiss: !s.hiss }),
+      toggleWow: () => this.setState({ wow: !s.wow })
+    };
+  }
+}
+</script>
+
+<script>
+(() => {
+  const HOLE = /\{\{\s*([^}]+?)\s*\}\}/g;
+  const WHOLE = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+  const resolve = (path, scope) => {
+    path = path.trim();
+    if (path === 'true') return true;
+    if (path === 'false') return false;
+    if (/^-?\d/.test(path)) return Number(path);
+    if (/^['"]/.test(path)) return path.slice(1, -1);
+    return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), scope);
+  };
+  const text = (s, scope) => s.replace(HOLE, (_, p) => { const v = resolve(p, scope); return v == null ? '' : String(v); });
+  const attrValue = (raw, scope) => { const m = WHOLE.exec(raw); return m ? resolve(m[1], scope) : text(raw, scope); };
+
+  const renderChildren = (src, scope, out) => { for (const n of src.childNodes) renderNode(n, scope, out); };
+  const renderNode = (n, scope, out) => {
+    if (n.nodeType === Node.TEXT_NODE) { out.appendChild(document.createTextNode(text(n.nodeValue, scope))); return; }
+    if (n.nodeType !== Node.ELEMENT_NODE) return;
+    const tag = n.localName;
+    if (tag === 'sc-for') {
+      const list = attrValue(n.getAttribute('list') || '', scope) || [];
+      const as = n.getAttribute('as') || 'item';
+      list.forEach((item, i) => renderChildren(n, Object.assign(Object.create(scope), { [as]: item, $index: i }), out));
+      return;
+    }
+    if (tag === 'sc-if') {
+      if (attrValue(n.getAttribute('value') || '', scope)) renderChildren(n, scope, out);
+      return;
+    }
+    const el = document.createElementNS(n.namespaceURI, n.localName);
+    for (const a of n.attributes) {
+      if (a.name.startsWith('hint-')) continue;
+      const v = attrValue(a.value, scope);
+      if (a.name.startsWith('on') && typeof v === 'function') { el.addEventListener(a.name.slice(2), v); continue; }
+      if (v === false || v == null) continue;
+      el.setAttribute(a.name, v === true ? '' : String(v));
+    }
+    renderChildren(n, scope, el);
+    out.appendChild(el);
+  };
+
+  const tpl = document.getElementById('dc-template').content;
+  const root = document.getElementById('dc-root');
+  const comp = new Component({"accent": "#F2772A", "showPhones": true});
+  window.__dcRender = () => {
+    const frag = document.createDocumentFragment();
+    renderChildren(tpl, comp.renderVals(), frag);
+    root.replaceChildren(frag);
+  };
+  window.__dcRender();
+  if (comp.componentDidMount) comp.componentDidMount();
+})();
+</script>
+</body>
+</html>

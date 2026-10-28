@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awesome Mix</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&amp;family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@500&amp;family=Nanum+Pen+Script&amp;family=Permanent+Marker&amp;family=VT323&amp;display=swap" rel="stylesheet">
+<style>
+/* 색상 토큰(PRD 5-2) */
+:root {
+  --bg: #0D0D0E;
+  --panel: #17171A;
+  --line: #2A2A2F;
+  --key: #232328;
+  --text: #ECE7DF;
+  --muted: #9A958C;
+  --accent: #F2772A;
+  --lcd-bg: #1A1306;
+  --lcd: #FFB547;
+  --paper: #EDE4CF;
+  --ink: #1C1A17;
+  --pen: #1D2A8C;
+  --ai: #3FB8A8;
+  --ai-bg: #12201E;
+  --shelf: #3A2A1E;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans KR', sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.app {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 3vw, 40px) 56px;
+}
+.brand-name {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  line-height: 1.1;
+}
+.brand-sub {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand-name">AWESOME MIX</div>
+    <div class="brand-sub">STEREO TAPE DECK · 로컬 MP3 플레이어</div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<script type="module">
+/* ===== Assets: assets.json 읽기, 이미지 미리 불러오기, 좌표를 %로 변환 ===== */
+
+/* ===== Store: IndexedDB 읽기·쓰기 (roots, tracks, art, tapes, settings) ===== */
+
+/* ===== Library: 폴더 스캔, 태그·길이 읽기, 권한 재요청 ===== */
+
+/* ===== Engine: AudioContext, 재생·이동, 히스·와우, 효과음 합성 ===== */
+
+/* ===== Deck: 테이프 상태 머신, 면 전환, 넣기·꺼내기 ===== */
+
+/* ===== Reels: 릴 각도·반지름 갱신 ===== */
+
+/* ===== Shelf: 테이프 목록, 끌어서 넣기, 편집기 ===== */
+
+/* ===== Curator: OpenRouter 호출, 응답 검증, 미리 보기 ===== */
+</script>
+</body>
+</html>

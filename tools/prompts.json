@@ -1,0 +1,121 @@
+{
+  "keep": "Using the attached image as the exact reference, keep the same object, size, position in the frame, camera angle, lighting, colors and background. Change only the following:",
+  "styles": {
+    "product": "Studio product photograph, straight-on front orthographic view with zero tilt, long telephoto lens so there is no perspective distortion, everything in sharp focus. Soft softbox key light from the top-left at 45 degrees with a faint fill light from the right. Plain flat light-grey background (#E6E6E6) with no floor shadow and no reflection. The object is centered and fills only about 70 percent of the frame, leaving generous empty margin on every side. Photorealistic materials, subtle micro-scratches, no logos, no text, no letters, no numbers, no brand marks, no hands, no props.",
+    "plain": "Studio product photograph, straight-on front orthographic view with zero tilt, long telephoto lens so there is no perspective distortion, everything in sharp focus. Soft softbox key light from the top-left at 45 degrees with a faint fill light from the right. Plain flat light-grey background (#E6E6E6) with no floor shadow and no reflection. The object is centered and fills only about 70 percent of the frame, leaving generous empty margin on every side. Photorealistic materials, no logos, no text, no letters, no numbers, no brand marks, no hands, no props.",
+    "spine": "Studio product photograph, straight-on orthographic view with zero tilt, long telephoto lens so there is no perspective distortion, everything in sharp focus. Soft softbox key light from the top-left at 45 degrees with a faint fill light from the right. Plain flat light-grey background (#E6E6E6) with no floor shadow and no reflection. The object is centered with generous empty margin above and below. Photorealistic materials, no logos, no text, no letters, no numbers, no brand marks, no hands, no props.",
+    "none": ""
+  },
+  "prompts": {
+    "IMG-01": {
+      "title": "데크 본체(빈 카세트 칸, 키 자리는 긴 홈 하나)",
+      "aspect": "4:3",
+      "prompt": "A premium 1980s-inspired portable stereo cassette player seen from the front, with its cassette door removed so the empty cassette compartment is fully visible. The body is a rounded rectangle of matte dark graphite plastic (#1C1B1A) framed by a thin machined aluminum bezel (#9A9EA4) with chamfered, lightly polished edges. The upper two-thirds of the front is the empty recessed cassette compartment: a dark matte interior, two white toothed reel spindles, and along the bottom edge of the compartment a chrome tape head, a black rubber pinch roller and a thin metal capstan. Two small hinge knuckles sit on the bottom edge of the compartment opening. Below the compartment is a horizontal control strip with only two elements: on top, a wide blank unlit display window of dark amber-tinted glass; underneath it, one single long empty horizontal recessed channel running almost the full width of the body, completely empty, with no buttons, no keys and no dividers inside it. A ridged volume wheel edge peeks out on the right side. There are no buttons anywhere on the front of the player."
+    },
+    "IMG-02": {
+      "title": "덮개 닫힌 본체(IMG-01 편집)",
+      "aspect": "4:3",
+      "edit": true,
+      "needs_ref": "IMG-01",
+      "prompt": "add a closed cassette door over the cassette compartment. The door is a thin matte graphite frame matching the body, with a large rectangular window of smoked dark transparent glass through which the empty compartment is faintly visible. The door has two small hinges along its bottom edge, aligned with the existing hinge knuckles, and a small finger notch at the top center. Do not change anything outside the compartment opening."
+    },
+    "IMG-04": {
+      "title": "카세트 셸",
+      "aspect": "3:2",
+      "prompt": "A standard compact audio cassette tape seen exactly from the front, lying perfectly flat. The shell is dark brownish-black matte plastic (#24221F) with five small recessed screws. The upper area has a smooth, flat, slightly recessed empty rectangle where a label would go, with no paper label on it. In the center there is a clear rectangular window, and two round hub holes show two white plastic reel hubs with only a very thin ring of brown tape on each, as if nearly empty. At the bottom center there is a trapezoid ridge with two small round holes and a strip of exposed brown tape. True cassette proportions of about 100 by 64 millimeters."
+    },
+    "IMG-04-ref": {
+      "title": "카세트 셸(IMG-01을 참고 이미지로)",
+      "aspect": "3:2",
+      "needs_ref": "IMG-01",
+      "prompt": "Use the attached image only as a reference for materials, color palette, lighting direction and camera angle. Do not copy its shape and do not include the attached object in the result. Create a new, separate image of: a standard compact audio cassette tape seen exactly from the front, lying perfectly flat. The shell is dark brownish-black matte plastic (#24221F) with five small recessed screws. The upper area has a smooth, flat, slightly recessed empty rectangle where a label would go, with no paper label on it. In the center there is a clear rectangular window, and two round hub holes show two white plastic reel hubs with only a very thin ring of brown tape on each, as if nearly empty. At the bottom center there is a trapezoid ridge with two small round holes and a strip of exposed brown tape. True cassette proportions of about 100 by 64 millimeters."
+    },
+    "IMG-05": {
+      "title": "빈 라벨 종이",
+      "aspect": "21:9",
+      "style": "plain",
+      "prompt": "A single blank paper cassette label lying perfectly flat: ivory colored (#EFE6D2) matte uncoated paper with fine visible fibers, a long rectangle with slightly rounded corners, and three faint thin horizontal ruled lines in pale grey. Completely blank, with no writing, no colored stripes, no printing."
+    },
+    "IMG-05-ref": {
+      "title": "빈 라벨 종이(IMG-04를 참고 이미지로)",
+      "aspect": "21:9",
+      "style": "plain",
+      "needs_ref": "IMG-04",
+      "prompt": "Use the attached image only as a reference for lighting direction, color temperature and camera angle. Do not copy its shape and do not include the attached object in the result. Create a new, separate image of: a single blank paper cassette label lying perfectly flat, sized to fit the empty label area of the attached cassette. Ivory colored (#EFE6D2) matte uncoated paper with fine visible fibers, a long rectangle with slightly rounded corners, and three faint thin horizontal ruled lines in pale grey. Completely blank, with no writing, no colored stripes, no printing."
+    },
+    "IMG-06": {
+      "title": "키 4개(올라온 상태, 눌림은 코드로 처리)",
+      "aspect": "21:9",
+      "prompt": "A row of exactly four separate chunky rectangular push keys from a 1980s cassette player, viewed straight from the front and evenly spaced in one horizontal line: a first key at the far left, a second key left of center, a third key right of center and a fourth key at the far right. Each key has a softly rounded top face and a visible front edge thickness. The second key from the left is satin orange plastic (#F2772A); the other three are matte dark graphite plastic (#232328). All four keys are in the raised, unpressed position. The key faces are completely blank with no symbols. The row of keys is centered vertically in the frame and fills only about 60 percent of the frame height, with generous empty space above and below the keys."
+    },
+    "IMG-06-ref": {
+      "title": "키 4개(IMG-01을 참고 이미지로, 긴 홈 길이에 맞춤)",
+      "aspect": "21:9",
+      "needs_ref": "IMG-01",
+      "prompt": "Use the attached image only as a reference for materials, color palette, lighting direction and camera angle, and size the keys so that the four of them side by side would exactly fill the long empty key channel of the attached player. Do not include the player itself in the result. Create a new, separate image of: a row of exactly four separate chunky rectangular push keys from a 1980s cassette player, viewed straight from the front and evenly spaced in one horizontal line: a first key at the far left, a second key left of center, a third key right of center and a fourth key at the far right. Each key has a softly rounded top face and a visible front edge thickness. The second key from the left is satin orange plastic (#F2772A); the other three are matte dark graphite plastic (#232328). All four keys are in the raised, unpressed position. The key faces are completely blank with no symbols. The row of keys is centered vertically in the frame and fills only about 60 percent of the frame height, with generous empty space above and below the keys."
+    },
+    "IMG-08": {
+      "title": "헤드폰",
+      "aspect": "3:2",
+      "style": "plain",
+      "prompt": "A pair of lightweight 1980s-style on-ear headphones seen straight from the front: a thin brushed-steel headband (#8E9298) forming a smooth arch, two round ear pads of soft open-cell foam in bright orange (#F2772A) with clearly visible foam pores, small black plastic ear cups behind the foam, and a thin black cable leaving the left ear cup and hanging down in a gentle curve. The headphones are symmetric."
+    },
+    "IMG-08-ref": {
+      "title": "헤드폰(IMG-06을 참고 이미지로, 주황색 맞춤)",
+      "aspect": "3:2",
+      "style": "plain",
+      "needs_ref": "IMG-06",
+      "prompt": "Use the attached image only as a reference for materials, lighting direction and camera angle, and match the orange of the foam exactly to the orange key in the attached image. Do not include the keys in the result. Create a new, separate image of: a pair of lightweight 1980s-style on-ear headphones seen straight from the front: a thin brushed-steel headband (#8E9298) forming a smooth arch, two round ear pads of soft open-cell foam in bright orange (#F2772A) with clearly visible foam pores, small black plastic ear cups behind the foam, and a thin black cable leaving the left ear cup and hanging down in a gentle curve. The headphones are symmetric."
+    },
+    "IMG-09": {
+      "title": "릴 허브(선택)",
+      "aspect": "1:1",
+      "style": "plain",
+      "prompt": "A single white plastic cassette reel hub seen straight from the front: a white ring with six small inward-pointing teeth around a round center hole, slightly glossy injection-molded plastic with a thin mold seam."
+    },
+    "IMG-10": {
+      "title": "감긴 테이프 질감(선택)",
+      "aspect": "1:1",
+      "style": "none",
+      "prompt": "A macro photograph looking straight at the flat face of a tightly wound pack of brown magnetic audio tape, filling the entire frame edge to edge with fine concentric rings centered in the frame and a soft satin sheen. Even, uniform lighting, sharp focus everywhere, no hub, no background, no text."
+    },
+    "IMG-11": {
+      "title": "케이스 책등(선택)",
+      "aspect": "9:16",
+      "style": "spine",
+      "prompt": "The narrow spine edge of a clear plastic cassette tape case standing upright, seen straight from the side: transparent hard plastic with soft vertical reflections, and a blank ivory paper insert visible inside along the spine. Completely blank, no writing."
+    },
+    "FIX-angle": {
+      "title": "수정: 비스듬한 각도를 정면으로",
+      "needs_ref": "어긋난",
+      "prompt": "Using the attached image as the exact reference, keep the same object, its design, materials, colors, lighting and background. Change only the following: turn the camera so it faces the front surface exactly head-on, like a flat scan, with no top or side surfaces visible and no perspective distortion."
+    },
+    "FIX-text": {
+      "title": "수정: 글자·로고 지우기",
+      "edit": true,
+      "needs_ref": "어긋난",
+      "prompt": "remove every letter, number, logo, symbol and printed marking so that all surfaces are plain, filling those areas with the surrounding material."
+    },
+    "FIX-zoom": {
+      "title": "수정: 물체를 작게(여백 확보)",
+      "needs_ref": "어긋난",
+      "prompt": "Using the attached image as the exact reference, keep the same object, camera angle, lighting, colors and background. Change only the following: zoom out so the object is smaller and fills only about 70 percent of the frame, centered, with generous empty background margin on every side."
+    },
+    "FIX-shadow": {
+      "title": "수정: 바닥 그림자·반사 없애기",
+      "needs_ref": "어긋난",
+      "prompt": "Using the attached image as the exact reference, keep the same object, size, position in the frame, camera angle, lighting and colors. Change only the following: make the background perfectly flat light grey (#E6E6E6) with no shadow, no reflection and no gradient under or around the object."
+    },
+    "FIX-color": {
+      "title": "수정: 색을 지정 값에 맞추기",
+      "needs_ref": "어긋난",
+      "prompt": "Using the attached image as the exact reference, keep the same object, size, position in the frame, camera angle, lighting and background. Change only the following: match the colors exactly to these values: graphite body #1C1B1A, aluminum bezel #9A9EA4, dark keys #232328, all orange parts #F2772A, cassette shell #24221F, label paper #EFE6D2, headband steel #8E9298. Keep the material finishes the same."
+    },
+    "FIX-keys": {
+      "title": "수정: 본체의 키·버튼을 긴 홈 하나로",
+      "edit": true,
+      "needs_ref": "IMG-01",
+      "prompt": "replace all the buttons and key recesses in the lower control strip with one single long empty horizontal recessed channel running almost the full width of the body, with no buttons, no keys and no dividers inside it. Keep the display window above it unchanged."
+    }
+  }
+}

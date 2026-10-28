@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awesome Mix 좌표 측정기</title>
+<style>
+:root {
+  --bg: #0D0D0E; --panel: #17171A; --line: #2A2A2F; --key: #232328;
+  --text: #ECE7DF; --muted: #9A958C; --accent: #F2772A; --lcd: #FFB547; --ai: #3FB8A8;
+  --ok: #6FCF8E; --warn: #FFB547; --bad: #FF7A6B;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; display: flex; flex-direction: column; }
+header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+header h1 { font-size: 16px; letter-spacing: .2em; margin: 0 12px 0 0; font-weight: 700; }
+button, .filebtn { font: inherit; color: var(--text); background: var(--key); border: 1px solid #3A3A40; border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 36px; }
+button:hover, .filebtn:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: #1B0F04; border-color: transparent; font-weight: 700; }
+button.armed { outline: 2px solid var(--accent); outline-offset: 1px; }
+.filebtn input { display: none; }
+main { flex: 1; display: flex; min-height: 0; }
+aside { width: 340px; flex: none; overflow-y: auto; border-right: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 16px; }
+section h2 { font-size: 12px; letter-spacing: .2em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.files { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.files li { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.files .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.files .path { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabs { display: flex; gap: 4px; background: var(--panel); padding: 4px; border-radius: 999px; }
+.tabs button { flex: 1; border: none; background: transparent; }
+.tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); font-weight: 700; }
+.fields { display: grid; gap: 8px; }
+.field { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.field.active { border-color: var(--accent); }
+.field .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.field .name { font-weight: 700; }
+.field .name small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.field .desc { color: var(--muted); font-size: 12px; margin: 4px 0 6px; }
+.field .nums { display: flex; gap: 4px; flex-wrap: wrap; }
+.field .nums label { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--muted); }
+.field input[type=number] { width: 66px; background: #0B0B0C; color: var(--text); border: 1px solid #333; border-radius: 6px; padding: 3px 5px; font: 12px ui-monospace, monospace; }
+.field .state { font-size: 11px; }
+.stage { flex: 1; position: relative; min-width: 0; background: #070708; }
+canvas#view { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+canvas#loupe { position: absolute; right: 12px; top: 12px; width: 180px; height: 180px; border-radius: 12px; border: 1px solid var(--line); background: #000; pointer-events: none; }
+.hint { pointer-events: none; position: absolute; left: 12px; bottom: 12px; right: 210px; background: rgba(23,23,26,.92); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.opts { display: grid; gap: 6px; font-size: 13px; }
+.opts label { display: flex; gap: 8px; align-items: center; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+textarea { width: 100%; height: 180px; background: #0B0B0C; color: #CDE9E4; border: 1px solid var(--line); border-radius: 10px; font: 11px/1.4 ui-monospace, monospace; padding: 8px; }
+.empty[hidden] { display: none; }
+.empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); padding: 24px; }
+.ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+</style>
+</head>
+<body>
+<header>
+  <h1>AWESOME MIX · 좌표 측정기</h1>
+  <label class="filebtn">assets 폴더 열기<input id="dirInput" type="file" webkitdirectory multiple></label>
+  <label class="filebtn">파일 여러 개 고르기<input id="filesInput" type="file" multiple accept="image/*,.json"></label>
+  <button id="downloadBtn" class="primary" type="button">assets.json 내려받기</button>
+  <span id="status" style="color:var(--muted)"></span>
+</header>
+<main>
+  <aside>
+    <section>
+      <h2>이미지 파일</h2>
+      <ul class="files" id="fileList"></ul>
+    </section>
+    <section>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="deck" aria-selected="true">데크</button>
+        <button type="button" role="tab" data-tab="cassette" aria-selected="false">카세트</button>
+        <button type="button" role="tab" data-tab="compose" aria-selected="false">합성 확인</button>
+      </div>
+    </section>
+    <section>
+      <h2 id="fieldsTitle">표시할 항목</h2>
+      <div class="fields" id="fields"></div>
+    </section>
+    <section id="composeOpts" hidden>
+      <h2>합성 옵션</h2>
+      <div class="opts">
+        <button type="button" id="fitBtn">허브에 맞추기(seatInBay 자동 계산)</button>
+        <label><input type="checkbox" id="showLid" checked> 덮개 보기</label>
+        <label><input type="checkbox" id="pressKeys"> 키 눌린 상태 보기</label>
+        <label>키 맞춤
+          <select id="keyMode" style="background:#0B0B0C;color:var(--text);border:1px solid #333;border-radius:6px;padding:3px">
+            <option value="stretch">홈에 꽉 차게(가운데만 늘림)</option>
+            <option value="contain">원래 비율 유지</option>
+          </select></label>
+        <label>키 사이 간격 <input type="number" id="keyGap" min="0" value="16" style="width:64px"> px</label>
+        <label>위·아래 여백 <input type="number" id="keyInset" min="0" value="0" style="width:64px"> px</label>
+        <label>가장자리 보존 <input type="range" id="keyEdge" min="5" max="45" value="22"> <span id="keyEdgeVal">22%</span></label>
+        <label>감긴 비율 <input type="range" id="fill" min="0" max="100" value="35"></label>
+      </div>
+      <h2 style="margin-top:12px">점검</h2>
+      <ul class="checks" id="checks"></ul>
+    </section>
+    <section>
+      <h2>assets.json 미리 보기</h2>
+      <textarea id="jsonOut" readonly></textarea>
+    </section>
+  </aside>
+  <div class="stage" id="stage">
+    <canvas id="view"></canvas>
+    <canvas id="loupe" width="180" height="180"></canvas>
+    <div class="empty" id="empty">위의 "assets 폴더 열기"로 assets 폴더를 선택하세요.<br>폴더 안의 deck·cassette 이미지를 이름으로 찾아 연결합니다.</div>
+    <div class="hint" id="hint">항목의 "표시" 버튼을 누른 뒤 이미지 위에서 끌어 주세요. 방향키로 1px(Shift는 10px)씩 옮길 수 있습니다.</div>
+  </div>
+</main>
+
+<script>
+(() => {
+  // ---------- 파일 연결 ----------
+  const SLOTS = [
+    { id: 'deck', label: '데크 본체', pattern: /deck-bay/i, folder: 'deck', need: true },
+    { id: 'lid', label: '덮개', pattern: /deck-lid/i, folder: 'deck', need: true },
+    { id: 'rew', label: '키 REW', pattern: /key-rew/i, folder: 'deck', need: true },
+    { id: 'play', label: '키 PLAY', pattern: /key-play/i, folder: 'deck', need: true },
+    { id: 'stop', label: '키 STOP', pattern: /key-stop/i, folder: 'deck', need: true },
+    { id: 'ff', label: '키 FF', pattern: /key-ff/i, folder: 'deck', need: true },
+    { id: 'headphones', label: '헤드폰', pattern: /headphones/i, folder: 'deck', need: true },
+    { id: 'shell', label: '카세트 셸', pattern: /cassette-shell/i, folder: 'cassette', need: true },
+    { id: 'label', label: '라벨 종이', pattern: /cassette-label/i, folder: 'cassette', need: true },
+    { id: 'hub', label: '릴 허브(선택)', pattern: /cassette-hub/i, folder: 'cassette', need: false },
+    { id: 'texture', label: '테이프 질감(선택)', pattern: /tape-pack-texture/i, folder: 'cassette', need: false },
+    { id: 'spine', label: '케이스 책등(선택)', pattern: /case-spine/i, folder: 'shelf', need: false },
+  ];
+  const assets = {};   // slot id -> { path, img, w, h }
+
+  // ---------- 측정 항목 ----------
+  const FIELDS = {
+    deck: [
+      { key: 'deck.bay', name: 'bay', desc: '빈 카세트 칸의 안쪽 사각형', type: 'rect', on: 'deck' },
+      { key: 'deck.spindles.left', name: 'spindles.left', desc: '왼쪽 흰 스핀들: 중심에서 끌어 테두리까지', type: 'circle', on: 'deck' },
+      { key: 'deck.spindles.right', name: 'spindles.right', desc: '오른쪽 흰 스핀들', type: 'circle', on: 'deck' },
+      { key: 'deck.lcd', name: 'lcd', desc: '빈 LCD 창의 안쪽 사각형', type: 'rect', on: 'deck' },
+      { key: 'deck.keyChannel', name: 'keyChannel', desc: '키가 들어갈 긴 홈의 안쪽 사각형', type: 'rect', on: 'deck' },
+      { key: 'deck.lid.hingeY', name: 'lid.hingeY', desc: '덮개 경첩이 있는 가로선(클릭)', type: 'hline', on: 'deck' },
+    ],
+    cassette: [
+      { key: 'cassette.labelArea', name: 'labelArea', desc: '셸의 빈 라벨 자리', type: 'rect', on: 'shell' },
+      { key: 'cassette.window', name: 'window', desc: '가운데 투명창', type: 'rect', on: 'shell' },
+      { key: 'cassette.hubs.left', name: 'hubs.left', desc: '왼쪽 허브 구멍: 중심에서 끌어 테두리까지', type: 'circle', on: 'shell' },
+      { key: 'cassette.hubs.right', name: 'hubs.right', desc: '오른쪽 허브 구멍', type: 'circle', on: 'shell' },
+      { key: 'cassette.packMaxRadius', name: 'packMaxRadius', desc: '테이프가 가득 감겼을 때의 반지름(왼쪽 허브 중심에서 끌기)', type: 'radius', on: 'shell', center: 'cassette.hubs.left' },
+    ],
+    compose: [
+      { key: 'cassette.seatInBay', name: 'seatInBay', desc: '칸에 넣은 카세트 위치(데크 좌표). "허브에 맞추기"로 자동 계산 권장', type: 'rect', on: 'deck', aspectOf: 'shell' },
+      { key: 'headphones.place', name: 'headphones.place', desc: '헤드폰을 놓을 위치(데크 좌표, 밖으로 나가도 됨)', type: 'rect', on: 'deck', aspectOf: 'headphones' },
+    ],
+  };
+  const ALL = [...FIELDS.deck, ...FIELDS.cassette, ...FIELDS.compose];
+  const byKey = Object.fromEntries(ALL.map(f => [f.key, f]));
+  let marks = {};      // key -> number | number[]
+  let tab = 'deck';
+  let armed = null;    // 현재 표시 중인 항목 key
+  let selected = null; // 방향키로 옮길 항목 key
+
+  try { marks = JSON.parse(localStorage.getItem('awesome-mix-calibrate') || '{}'); } catch (e) { marks = {}; }
+  const save = () => { try { localStorage.setItem('awesome-mix-calibrate', JSON.stringify(marks)); } catch (e) {} };
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const view = $('view'), ctx = view.getContext('2d');
+  const loupe = $('loupe'), lctx = loupe.getContext('2d');
+  const status = $('status');
+
+  function relPath(file) {
+    const rel = file.webkitRelativePath || '';
+    if (rel) {
+      const parts = rel.split('/');
+      parts.shift();                      // 고른 폴더 이름(assets) 제거
+      return parts.join('/');
+    }
+    return null;
+  }
+
+  async function loadFiles(list) {
+    const files = [...list];
+    const jsonFile = files.find(f => /assets\.json$/i.test(f.name));
+    const images = files.filter(f => /\.(png|webp|jpe?g)$/i.test(f.name) && !/[\\/]_(work|master|preview)[\\/]/.test(f.webkitRelativePath || ''));
+    for (const slot of SLOTS) {
+      const cands = images.filter(f => slot.pattern.test(f.name));
+      if (!cands.length) continue;
+      cands.sort((a, b) => score(b) - score(a));
+      const f = cands[0];
+      const img = await loadImage(f);
+      assets[slot.id] = { path: relPath(f) || `${slot.folder}/${f.name}`, img, w: img.naturalWidth, h: img.naturalHeight, name: f.name };
+    }
+    if (jsonFile) {
+      try { importJson(JSON.parse(await jsonFile.text())); status.textContent = '기존 assets.json의 값을 불러왔습니다.'; }
+      catch (e) { status.textContent = 'assets.json을 읽지 못했습니다: ' + e.message; }
+    } else {
+      status.textContent = `이미지 ${Object.keys(assets).length}개를 연결했습니다.`;
+    }
+    renderFiles(); renderFields(); draw(); output();
+  }
+  const score = f => (/\.webp$/i.test(f.name) ? 2 : 0) + (/@2x/i.test(f.name) ? 1 : 0);
+  function loadImage(file) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => rej(new Error(file.name + '을 열 수 없습니다'));
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  function importJson(j) {
+    const take = (key, v) => { if (v !== undefined && v !== null && !(Array.isArray(v) && v.every(n => n === 0)) && v !== 0) marks[key] = v; };
+    take('deck.bay', j.deck?.bay); take('deck.spindles.left', j.deck?.spindles?.left); take('deck.spindles.right', j.deck?.spindles?.right);
+    take('deck.lcd', j.deck?.lcd); take('deck.keyChannel', j.deck?.keyChannel); take('deck.lid.hingeY', j.deck?.lid?.hingeY);
+    take('cassette.labelArea', j.cassette?.labelArea); take('cassette.window', j.cassette?.window);
+    take('cassette.hubs.left', j.cassette?.hubs?.left); take('cassette.hubs.right', j.cassette?.hubs?.right);
+    take('cassette.packMaxRadius', j.cassette?.packMaxRadius); take('cassette.seatInBay', j.cassette?.seatInBay);
+    take('headphones.place', j.headphones?.place);
+    if (j.keys?.layout) { marks['keys.layout'] = j.keys.layout; applyLayout(j.keys.layout); }
+    save();
+  }
+
+  function renderFiles() {
+    $('fileList').innerHTML = SLOTS.map(s => {
+      const a = assets[s.id];
+      const color = a ? 'var(--ok)' : (s.need ? 'var(--bad)' : 'var(--muted)');
+      return `<li><span class="dot" style="background:${color}"></span><span>${s.label}</span><span class="path">${a ? a.path + ` (${a.w}×${a.h})` : (s.need ? '없음' : '없음(선택)')}</span></li>`;
+    }).join('');
+    $('empty').hidden = !!assets.deck;
+  }
+
+  function fmt(v) { return v === undefined ? '' : (Array.isArray(v) ? v : [v]); }
+  function renderFields() {
+    const list = FIELDS[tab];
+    $('composeOpts').hidden = tab !== 'compose';
+    $('fieldsTitle').textContent = { deck: '데크 이미지에 표시', cassette: '카세트 셸 이미지에 표시', compose: '합성 위치(데크 좌표)' }[tab];
+    $('fields').innerHTML = list.map(f => {
+      const v = marks[f.key];
+      const labels = { rect: ['x', 'y', 'w', 'h'], circle: ['cx', 'cy', 'r'], hline: ['y'], radius: ['r'] }[f.type];
+      const vals = fmt(v);
+      const nums = labels.map((l, i) => `<label>${l}<input type="number" data-key="${f.key}" data-i="${i}" value="${vals[i] ?? ''}"></label>`).join('');
+      const done = v !== undefined;
+      return `<div class="field${armed === f.key ? ' active' : ''}" data-key="${f.key}">
+        <div class="top"><span class="name">${f.name}<small>${{ rect: '사각형', circle: '원', hline: '가로선', radius: '반지름' }[f.type]}</small></span>
+        <span class="state ${done ? 'ok' : 'warn'}">${done ? '완료' : '미표시'}</span>
+        <button type="button" data-arm="${f.key}" class="${armed === f.key ? 'armed' : ''}">표시</button></div>
+        <div class="desc">${f.desc}</div><div class="nums">${nums}</div></div>`;
+    }).join('');
+  }
+
+  // ---------- 좌표 변환 ----------
+  let fit = { s: 1, ox: 0, oy: 0, img: null };   // 이미지 px -> 캔버스 px
+  function baseImage() { return tab === 'cassette' ? assets.shell : assets.deck; }
+  function layout() {
+    const dpr = window.devicePixelRatio || 1;
+    const r = view.getBoundingClientRect();
+    view.width = Math.round(r.width * dpr); view.height = Math.round(r.height * dpr);
+    const a = baseImage();
+    if (!a) return;
+    // 합성 탭은 헤드폰이 밖으로 나갈 수 있으니 여백을 둔다
+    const pad = (tab === 'compose' ? 0.18 : 0.04);
+    const W = a.w * (1 + pad * 2), H = a.h * (1 + pad * 2);
+    const s = Math.min(view.width / W, view.height / H);
+    fit = { s, ox: (view.width - a.w * s) / 2, oy: (view.height - a.h * s) / 2, img: a };
+  }
+  const toCanvas = (x, y) => [fit.ox + x * fit.s, fit.oy + y * fit.s];
+  function toImage(ev) {
+    const r = view.getBoundingClientRect(), dpr = view.width / r.width;
+    const cx = (ev.clientX - r.left) * dpr, cy = (ev.clientY - r.top) * dpr;
+    return [(cx - fit.ox) / fit.s, (cy - fit.oy) / fit.s, cx, cy];
+  }
+
+  // ---------- 그리기 ----------
+  const COLORS = ['#F2772A', '#3FB8A8', '#FFB547', '#8FB4FF', '#FF7AB6', '#B4F28F'];
+  function draw() {
+    layout();
+    ctx.clearRect(0, 0, view.width, view.height);
+    const a = baseImage();
+    if (!a) return;
+    if (tab === 'compose') drawComposite(); else ctx.drawImage(a.img, fit.ox, fit.oy, a.w * fit.s, a.h * fit.s);
+    const list = tab === 'compose' ? FIELDS.compose : FIELDS[tab];
+    list.forEach((f, i) => drawMark(f, COLORS[i % COLORS.length]));
+    if (tab === 'compose') checks();
+  }
+  function drawMark(f, color) {
+    const v = marks[f.key];
+    if (v === undefined) return;
+    ctx.save();
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = Math.max(1.5, 2 * (window.devicePixelRatio || 1));
+    if (selected === f.key) ctx.setLineDash([8, 5]);
+    ctx.font = `${12 * (window.devicePixelRatio || 1)}px system-ui`;
+    if (f.type === 'rect') {
+      const [x, y] = toCanvas(v[0], v[1]);
+      ctx.strokeRect(x, y, v[2] * fit.s, v[3] * fit.s);
+      ctx.fillText(f.name, x + 4, y - 6);
+    } else if (f.type === 'circle') {
+      const [x, y] = toCanvas(v[0], v[1]);
+      ctx.beginPath(); ctx.arc(x, y, v[2] * fit.s, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - 6, y); ctx.lineTo(x + 6, y); ctx.moveTo(x, y - 6); ctx.lineTo(x, y + 6); ctx.stroke();
+      ctx.fillText(f.name, x + v[2] * fit.s + 4, y);
+    } else if (f.type === 'hline') {
+      const [, y] = toCanvas(0, v);
+      ctx.beginPath(); ctx.moveTo(fit.ox, y); ctx.lineTo(fit.ox + fit.img.w * fit.s, y); ctx.stroke();
+      ctx.fillText(f.name, fit.ox + 4, y - 6);
+    } else if (f.type === 'radius') {
+      const c = marks[f.center];
+      if (c) {
+        const [x, y] = toCanvas(c[0], c[1]);
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.arc(x, y, v * fit.s, 0, Math.PI * 2); ctx.stroke();
+        const rc = marks['cassette.hubs.right'];
+        if (rc) { const [x2, y2] = toCanvas(rc[0], rc[1]); ctx.beginPath(); ctx.arc(x2, y2, v * fit.s, 0, Math.PI * 2); ctx.stroke(); }
+        ctx.fillText(f.name, x - v * fit.s, y - v * fit.s - 6);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawComposite() {
+    const d = assets.deck, sh = assets.shell;
+    const S = fit.s;
+    const put = (img, x, y, w, h) => { const [cx, cy] = toCanvas(x, y); ctx.drawImage(img, cx, cy, w * S, h * S); };
+    put(d.img, 0, 0, d.w, d.h);
+    const seat = marks['cassette.seatInBay'];
+    if (sh && seat) {
+      const k = seat[2] / sh.w;                 // 카세트 px -> 데크 px
+      const hubL = marks['cassette.hubs.left'], hubR = marks['cassette.hubs.right'], rMax = marks['cassette.packMaxRadius'];
+      // 감긴 테이프(셸 아래 층)
+      if (hubL && hubR && rMax) {
+        const f = +$('fill').value / 100;
+        const rh = (hubL[2] + hubR[2]) / 2;
+        const rad = q => Math.sqrt(rh * rh + q * (rMax * rMax - rh * rh));
+        [[hubL, rad(f)], [hubR, rad(1 - f)]].forEach(([h, r]) => {
+          const [cx, cy] = toCanvas(seat[0] + h[0] * k, seat[1] + h[1] * k);
+          ctx.fillStyle = '#3A2519'; ctx.beginPath(); ctx.arc(cx, cy, r * k * S, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#E8E2D6'; ctx.beginPath(); ctx.arc(cx, cy, h[2] * k * S, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#24221F'; ctx.beginPath(); ctx.arc(cx, cy, h[2] * 0.45 * k * S, 0, Math.PI * 2); ctx.fill();
+        });
+      }
+      put(sh.img, seat[0], seat[1], sh.w * k, sh.h * k);
+      const la = marks['cassette.labelArea'];
+      if (la && assets.label) {
+        put(assets.label.img, seat[0] + la[0] * k, seat[1] + la[1] * k, la[2] * k, la[3] * k);
+        const [tx, ty] = toCanvas(seat[0] + (la[0] + la[2] * 0.06) * k, seat[1] + (la[1] + la[3] * 0.62) * k);
+        ctx.fillStyle = '#1D2A8C'; ctx.font = `${Math.max(10, la[3] * k * S * 0.32)}px "Permanent Marker", "Comic Sans MS", cursive`;
+        ctx.fillText('Awesome Mix Vol. 1', tx, ty);
+      }
+    }
+    if ($('showLid').checked && assets.lid) put(assets.lid.img, 0, 0, d.w, d.h);
+    const ch = marks['deck.keyChannel'];
+    if (ch) {
+      const pressed = $('pressKeys').checked;
+      const L = keyLayout();
+      // 이미지의 일부(sx..)를 데크 좌표(dx..)에 그린다
+      const part = (img, sx, sy, sw, sh, dx, dy, dw, dh) => { const [cx, cy] = toCanvas(dx, dy); ctx.drawImage(img, sx, sy, sw, sh, cx, cy, dw * S, dh * S); };
+      const slotW = (ch[2] - L.gap * 3) / 4;
+      ['rew', 'play', 'stop', 'ff'].forEach((id, i) => {
+        const a = assets[id]; if (!a) return;
+        let h = ch[3] - L.inset * 2, w = slotW;
+        let x = ch[0] + (slotW + L.gap) * i, y = ch[1] + L.inset;
+        if (L.mode === 'contain') { h = Math.min(h, a.h * slotW / a.w); w = a.w * h / a.h; x += (slotW - w) / 2; y = ch[1] + (ch[3] - h) / 2; }
+        if (pressed) y += h * 0.015;
+        ctx.save(); if (pressed) ctx.filter = 'brightness(0.88)';
+        if (L.mode === 'contain') {
+          put(a.img, x, y, w, h);
+        } else {
+          // 3분할: 양쪽 가장자리는 키 높이에 맞춘 비율 그대로, 가운데만 가로로 늘린다
+          const e = a.w * L.edge;
+          const de = Math.min(e * h / a.h, w / 2);
+          part(a.img, 0, 0, e, a.h, x, y, de, h);
+          part(a.img, e, 0, a.w - e * 2, a.h, x + de, y, w - de * 2, h);
+          part(a.img, a.w - e, 0, e, a.h, x + w - de, y, de, h);
+        }
+        ctx.restore();
+      });
+    }
+    const hp = marks['headphones.place'];
+    if (hp && assets.headphones) put(assets.headphones.img, hp[0], hp[1], hp[2], hp[3]);
+  }
+
+  // ---------- 허브에 맞추기 ----------
+  function fitSeat() {
+    const hL = marks['cassette.hubs.left'], hR = marks['cassette.hubs.right'];
+    const sL = marks['deck.spindles.left'], sR = marks['deck.spindles.right'];
+    if (!hL || !hR || !sL || !sR || !assets.shell) { alert('카세트 허브 2개와 데크 스핀들 2개를 먼저 표시해 주세요.'); return; }
+    const k = Math.hypot(sR[0] - sL[0], sR[1] - sL[1]) / Math.hypot(hR[0] - hL[0], hR[1] - hL[1]);
+    const x = ((sL[0] - hL[0] * k) + (sR[0] - hR[0] * k)) / 2;
+    const y = ((sL[1] - hL[1] * k) + (sR[1] - hR[1] * k)) / 2;
+    marks['cassette.seatInBay'] = [x, y, assets.shell.w * k, assets.shell.h * k].map(Math.round);
+    save(); renderFields(); draw(); output();
+  }
+  function checks() {
+    const out = [];
+    const seat = marks['cassette.seatInBay'], sh = assets.shell;
+    const pairs = [['left', '왼쪽'], ['right', '오른쪽']];
+    if (seat && sh) {
+      const k = seat[2] / sh.w;
+      pairs.forEach(([side, ko]) => {
+        const h = marks['cassette.hubs.' + side], s = marks['deck.spindles.' + side];
+        if (h && s) {
+          const dist = Math.hypot(seat[0] + h[0] * k - s[0], seat[1] + h[1] * k - s[1]);
+          out.push(`<li class="${dist <= 4 ? 'ok' : dist <= 12 ? 'warn' : 'bad'}">${ko} 허브와 스핀들 차이: ${dist.toFixed(1)}px</li>`);
+        }
+      });
+      const bay = marks['deck.bay'];
+      if (bay) {
+        const inside = seat[0] >= bay[0] - 4 && seat[1] >= bay[1] - 4 && seat[0] + seat[2] <= bay[0] + bay[2] + 4 && seat[1] + seat[3] <= bay[1] + bay[3] + 4;
+        out.push(`<li class="${inside ? 'ok' : 'warn'}">카세트가 칸(bay) 안에 ${inside ? '들어감' : '다 들어가지 않음'}</li>`);
+      }
+    }
+    const missing = ALL.filter(f => marks[f.key] === undefined).map(f => f.name);
+    out.push(`<li class="${missing.length ? 'warn' : 'ok'}">${missing.length ? '아직 표시하지 않은 항목: ' + missing.join(', ') : '모든 항목을 표시했습니다'}</li>`);
+    $('checks').innerHTML = out.join('');
+  }
+
+  // ---------- 마우스 ----------
+  let drag = null;
+  view.addEventListener('mousedown', ev => {
+    if (!armed || !fit.img) return;
+    const f = byKey[armed];
+    const [x, y] = toImage(ev);
+    drag = { f, x0: x, y0: y };
+    if (f.type === 'hline') { marks[f.key] = Math.round(y); finishDrag(); }
+  });
+  view.addEventListener('mousemove', ev => {
+    const [x, y, cx, cy] = toImage(ev);
+    drawLoupe(cx, cy, x, y);
+    if (!drag) return;
+    const f = drag.f;
+    if (f.type === 'rect') {
+      let w = x - drag.x0, h = y - drag.y0;
+      if (f.aspectOf && assets[f.aspectOf]) { const ar = assets[f.aspectOf].w / assets[f.aspectOf].h; h = Math.sign(h || 1) * Math.abs(w) / ar; }
+      const rx = w < 0 ? drag.x0 + w : drag.x0, ry = h < 0 ? drag.y0 + h : drag.y0;
+      marks[f.key] = [rx, ry, Math.abs(w), Math.abs(h)].map(Math.round);
+    } else if (f.type === 'circle') {
+      marks[f.key] = [drag.x0, drag.y0, Math.hypot(x - drag.x0, y - drag.y0)].map(Math.round);
+    } else if (f.type === 'radius') {
+      const c = marks[f.center];
+      if (c) marks[f.key] = Math.round(Math.hypot(x - c[0], y - c[1]));
+    }
+    draw();
+  });
+  window.addEventListener('mouseup', () => { if (drag) finishDrag(); });
+  function finishDrag() {
+    drag = null; selected = armed; save(); renderFields(); draw(); output();
+  }
+  function drawLoupe(cx, cy, x, y) {
+    lctx.fillStyle = '#000'; lctx.fillRect(0, 0, 180, 180);
+    const zoom = 4, src = 180 / zoom / fit.s;     // 이미지 px 기준 확대
+    const a = baseImage();
+    if (!a) return;
+    lctx.imageSmoothingEnabled = false;
+    if (tab === 'compose') {
+      lctx.drawImage(view, cx - 22, cy - 22, 45, 45, 0, 0, 180, 180);
+    } else {
+      lctx.drawImage(a.img, x - src / 2, y - src / 2, src, src, 0, 0, 180, 180);
+    }
+    lctx.strokeStyle = '#F2772A'; lctx.beginPath(); lctx.moveTo(90, 0); lctx.lineTo(90, 180); lctx.moveTo(0, 90); lctx.lineTo(180, 90); lctx.stroke();
+    lctx.fillStyle = '#ECE7DF'; lctx.font = '11px ui-monospace, monospace';
+    lctx.fillText(`${Math.round(x)}, ${Math.round(y)}`, 6, 172);
+  }
+
+  // ---------- 방향키로 미세 조정 ----------
+  window.addEventListener('keydown', ev => {
+    if (!selected || ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA') return;
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
+    if (!d) return;
+    ev.preventDefault();
+    const step = ev.shiftKey ? 10 : 1, f = byKey[selected], v = marks[selected];
+    if (v === undefined) return;
+    if (f.type === 'hline') marks[selected] = v + d[1] * step;
+    else if (f.type === 'radius') marks[selected] = Math.max(1, v + (d[0] || -d[1]) * step);
+    else { v[0] += d[0] * step; v[1] += d[1] * step; }
+    save(); renderFields(); draw(); output();
+  });
+
+  // ---------- 사이드바 이벤트 ----------
+  $('fields').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-arm]');
+    if (!b) return;
+    armed = armed === b.dataset.arm ? null : b.dataset.arm;
+    selected = armed || selected;
+    $('hint').textContent = armed ? `${byKey[armed].name}: ${byKey[armed].desc}` : '항목의 "표시" 버튼을 누른 뒤 이미지 위에서 끌어 주세요. 방향키로 1px(Shift는 10px)씩 옮길 수 있습니다.';
+    renderFields(); draw();
+  });
+  $('fields').addEventListener('change', ev => {
+    const inp = ev.target.closest('input[data-key]');
+    if (!inp) return;
+    const f = byKey[inp.dataset.key], i = +inp.dataset.i, n = Math.round(+inp.value);
+    if (f.type === 'hline' || f.type === 'radius') marks[f.key] = n;
+    else { const len = f.type === 'rect' ? 4 : 3; const v = marks[f.key] || Array(len).fill(0); v[i] = n; marks[f.key] = v; }
+    save(); renderFields(); draw(); output();
+  });
+  document.querySelector('.tabs').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-tab]');
+    if (!b) return;
+    tab = b.dataset.tab; armed = null;
+    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+    renderFields(); draw();
+  });
+  $('fitBtn').addEventListener('click', fitSeat);
+  ['showLid', 'pressKeys', 'fill'].forEach(id => $(id).addEventListener('input', draw));
+  // 키 배치 방식은 assets.json의 keys.layout으로 저장한다
+  function keyLayout() {
+    return { mode: $('keyMode').value, gap: Math.max(0, Math.round(+$('keyGap').value || 0)), inset: Math.max(0, Math.round(+$('keyInset').value || 0)), edge: +$('keyEdge').value / 100 };
+  }
+  function applyLayout(l) {
+    if (!l) return;
+    if (l.mode) $('keyMode').value = l.mode;
+    if (l.gap !== undefined) $('keyGap').value = l.gap;
+    if (l.inset !== undefined) $('keyInset').value = l.inset;
+    if (l.edge !== undefined) $('keyEdge').value = Math.round(l.edge * 100);
+    $('keyEdgeVal').textContent = $('keyEdge').value + '%';
+  }
+  ['keyMode', 'keyGap', 'keyInset', 'keyEdge'].forEach(id => $(id).addEventListener('input', () => {
+    $('keyEdgeVal').textContent = $('keyEdge').value + '%';
+    marks['keys.layout'] = keyLayout(); save(); draw(); output();
+  }));
+  applyLayout(marks['keys.layout']);
+  $('dirInput').addEventListener('change', e => loadFiles(e.target.files));
+  $('filesInput').addEventListener('change', e => loadFiles(e.target.files));
+  window.addEventListener('resize', draw);
+
+  // ---------- 출력 ----------
+  function build() {
+    const p = id => assets[id]?.path;
+    const sz = id => assets[id] ? [assets[id].w, assets[id].h] : undefined;
+    const m = k => marks[k];
+    const j = {
+      version: 1,
+      deck: { image: p('deck'), size: sz('deck'), bay: m('deck.bay'), spindles: { left: m('deck.spindles.left'), right: m('deck.spindles.right') }, lcd: m('deck.lcd'), keyChannel: m('deck.keyChannel'), lid: { image: p('lid'), hingeY: m('deck.lid.hingeY') } },
+      keys: { files: { rew: p('rew'), play: p('play'), stop: p('stop'), ff: p('ff') }, sizes: { rew: sz('rew'), play: sz('play'), stop: sz('stop'), ff: sz('ff') }, pressed: { translateY: '1.5%', brightness: 0.88 }, layout: keyLayout() },
+      cassette: { image: p('shell'), label: p('label'), size: sz('shell'), labelArea: m('cassette.labelArea'), window: m('cassette.window'), hubs: { left: m('cassette.hubs.left'), right: m('cassette.hubs.right') }, packMaxRadius: m('cassette.packMaxRadius'), seatInBay: m('cassette.seatInBay') },
+      headphones: { image: p('headphones'), size: sz('headphones'), place: m('headphones.place') },
+    };
+    const optional = {};
+    if (p('hub')) optional.cassetteHub = p('hub');
+    if (p('texture')) optional.tapePackTexture = p('texture');
+    if (p('spine')) optional.caseSpine = p('spine');
+    if (Object.keys(optional).length) j.optional = optional;
+    return j;
+  }
+  // 숫자 배열은 한 줄로 보여 준다
+  const pretty = j => JSON.stringify(j, null, 2).replace(/\[\s*(-?\d[\d.\s,-]*?)\s*\]/g, (_, inner) => '[' + inner.split(/\s*,\s*/).join(', ') + ']');
+  function output() { $('jsonOut').value = pretty(build()); }
+  $('downloadBtn').addEventListener('click', () => {
+    const missing = ALL.filter(f => marks[f.key] === undefined).map(f => f.name);
+    const noFiles = SLOTS.filter(s => s.need && !assets[s.id]).map(s => s.label);
+    if ((missing.length || noFiles.length) && !confirm(`아직 비어 있는 항목이 있습니다.\n${[...noFiles, ...missing].join(', ')}\n그래도 내려받을까요?`)) return;
+    const blob = new Blob([pretty(build()) + '\n'], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'assets.json'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    status.textContent = '내려받은 assets.json을 assets 폴더 바로 아래에 넣어 주세요.';
+  });
+
+  renderFiles(); renderFields(); output();
+})();
+</script>
+</body>
+</html>

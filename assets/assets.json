@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "deck": {
+    "image": "deck/deck-bay.webp",
+    "size": [2048, 1536],
+    "bay": [468, 304, 1112, 617],
+    "spindles": {
+      "left": [784, 591, 63],
+      "right": [1263, 592, 63]
+    },
+    "lcd": [449, 996, 1150, 135],
+    "keyChannel": [466, 1159, 1112, 97],
+    "lid": {
+      "image": "deck/deck-lid.webp",
+      "hingeY": 928
+    }
+  },
+  "keys": {
+    "files": {
+      "rew": "deck/key-rew2x.webp",
+      "play": "deck/key-play2x.webp",
+      "stop": "deck/key-stop2x.webp",
+      "ff": "deck/key-ff2x.webp"
+    },
+    "sizes": {
+      "rew": [394, 628],
+      "play": [404, 628],
+      "stop": [400, 628],
+      "ff": [396, 628]
+    },
+    "pressed": {
+      "translateY": "1.5%",
+      "brightness": 0.88
+    },
+    "layout": {
+      "mode": "stretch",
+      "gap": 16,
+      "inset": 0,
+      "edge": 0.22
+    }
+  },
+  "cassette": {
+    "image": "cassette/cassette-shell.webp",
+    "label": "cassette/cassette-label.webp",
+    "size": [1260, 800],
+    "labelArea": [225, 170, 817, 127],
+    "window": [515, 332, 232, 100],
+    "hubs": {
+      "left": [413, 385, 47],
+      "right": [847, 385, 47]
+    },
+    "packMaxRadius": 194,
+    "seatInBay": [328, 167, 1391, 883]
+  },
+  "headphones": {
+    "image": "deck/headphones.webp",
+    "size": [1200, 800],
+    "place": [1050, -400, 1803, 1202]
+  },
+  "optional": {
+    "cassetteHub": "cassette/cassette-hub.webp",
+    "tapePackTexture": "cassette/tape-pack-texture.webp",
+    "caseSpine": "shelf/case-spine.webp"
+  }
+}
