@@ -27,8 +27,15 @@
   --ai: #3FB8A8;
   --ai-bg: #12201E;
   --shelf: #3A2A1E;
+  /* 토큰에서 섞어 만든 보조 색 */
+  --line-strong: color-mix(in srgb, var(--line) 70%, var(--muted));
+  --lcd-dim: color-mix(in srgb, var(--lcd) 75%, var(--lcd-bg));
+  --ink-muted: color-mix(in srgb, var(--ink) 62%, var(--paper));
+  --ai-line: color-mix(in srgb, var(--ai) 35%, var(--ai-bg));
+  --ai-text: color-mix(in srgb, var(--ai) 45%, var(--text));
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0;
   min-height: 100vh;
@@ -38,114 +45,379 @@ body {
   font-size: 15px;
   line-height: 1.55;
 }
+button { font-family: inherit; }
+button:focus-visible, input:focus-visible, .btn:focus-within { outline: 2px solid var(--lcd); outline-offset: 2px; }
 .app {
   max-width: 1360px;
   margin: 0 auto;
   padding: 28px clamp(16px, 3vw, 40px) 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
-.brand-name {
-  font-family: 'Archivo Narrow', sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  letter-spacing: 0.3em;
-  line-height: 1.1;
-}
-.brand-sub {
-  font-size: 12px;
-  color: var(--muted);
-  letter-spacing: 0.04em;
-}
-
-/* M1 임시 화면(시안 A 배치는 M2에서) */
-.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
-.actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.btn {
-  height: 44px; padding: 0 18px; border-radius: 999px;
-  border: 1px solid var(--line); background: transparent; color: var(--text);
-  font: inherit; font-size: 14px; display: inline-flex; align-items: center; cursor: pointer;
-}
-.btn:hover { border-color: var(--muted); }
-.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.btn:focus-within, button:focus-visible { outline: 2px solid var(--lcd); outline-offset: 2px; }
-#main { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 24px; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; padding: 26px; min-width: 0; }
-.panel h2 { margin: 0 0 12px; font-size: 20px; }
-.panel h3 { margin: 0 0 8px; font-family: 'Archivo Narrow', sans-serif; font-size: 13px; letter-spacing: 0.24em; color: var(--muted); }
-.lcd { background: var(--lcd-bg); color: var(--lcd); border-radius: 14px; padding: 14px 18px; }
-.lcd-top { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; }
-.lcd-title { font-size: 22px; font-weight: 700; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lcd-artist { font-size: 14px; opacity: 0.8; }
-.keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
-.key {
-  height: 72px; border-radius: 14px; border: 1px solid var(--line); background: var(--key); color: var(--text);
-  font-family: 'Archivo Narrow', sans-serif; font-size: 13px; letter-spacing: 0.24em; cursor: pointer;
-  box-shadow: 0 4px 0 #050506;
-}
-.key[aria-pressed="true"] { transform: translateY(4px); box-shadow: none; }
-#keyPlay { background: var(--accent); color: var(--ink); font-weight: 700; }
-.message { min-height: 1.55em; margin: 14px 0 0; font-size: 13px; color: var(--muted); }
-.sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-.tracks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.track {
-  width: 100%; min-height: 48px; border: none; border-radius: 12px; padding: 6px 10px;
-  display: grid; grid-template-columns: 26px 32px minmax(0, 1fr) auto; gap: 10px; align-items: center;
-  background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer;
-}
-.track:hover { background: var(--key); }
-.track.is-current { background: var(--paper); color: var(--ink); }
-.track:disabled { opacity: 0.4; cursor: default; }
-.track .n, .track .d { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
-.track .art { width: 32px; height: 32px; border-radius: 4px; background: var(--line); overflow: hidden; }
-.track .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.track .t { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.track .a { display: block; font-size: 13px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.main { display: flex; flex-direction: column; gap: 24px; }
+.row { display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; min-width: 0; }
+.panel-wide { flex: 999 1 640px; }
+.panel-side { flex: 1 1 380px; }
 .notice { background: var(--lcd-bg); color: var(--lcd); border-radius: 14px; padding: 18px 22px; }
 body.is-dragging .app { outline: 2px dashed var(--accent); outline-offset: -8px; }
+
+/* 상단 띠 */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-icon {
+  width: 40px; height: 40px; border-radius: 10px; background: var(--key); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-icon span {
+  width: 22px; height: 14px; border-radius: 3px; border: 2px solid var(--accent);
+  background: radial-gradient(circle at 30% 50%, var(--accent) 2px, transparent 2.5px), radial-gradient(circle at 70% 50%, var(--accent) 2px, transparent 2.5px);
+}
+.brand-name { font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.3em; line-height: 1.1; }
+.brand-sub { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.btn {
+  height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line-strong);
+  background: transparent; color: var(--text); font-size: 14px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer; position: relative;
+}
+.btn:hover { border-color: var(--muted); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.btn-round { width: 44px; padding: 0; justify-content: center; }
+.toggle {
+  background: var(--panel); font-family: 'Archivo Narrow', sans-serif; font-weight: 600;
+  letter-spacing: 0.16em; font-size: 13px; gap: 10px;
+}
+.led { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.toggle[aria-pressed="true"] .led { background: var(--lcd); box-shadow: 0 0 10px var(--lcd); }
+
+/* 데크 패널 */
+.deck-panel { position: relative; overflow: hidden; padding: clamp(18px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 20px; }
+.deck-caption { font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.32em; color: var(--muted); }
+.deck-well { border-radius: 22px; padding: clamp(10px, 1.6vw, 24px); background: color-mix(in srgb, var(--bg) 70%, black); box-shadow: inset 0 2px 18px rgba(0, 0, 0, 0.8), inset 0 0 0 1px var(--line); }
+.deck { position: relative; width: 100%; max-width: 900px; margin: 0 auto; container-type: inline-size; }
+.deck .layer { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
+.deck img { -webkit-user-drag: none; }
+
+/* 실사 데크: 위치·크기는 모두 assets.json에서 %로 넣는다 */
+.deck--image .bay-clip { position: absolute; inset: 0; }
+.cassette { position: absolute; container-type: inline-size; }
+.cassette > * { position: absolute; }
+.pack {
+  border-radius: 50%;
+  background: var(--pack-img, repeating-radial-gradient(circle, #2B1B12 0 1.5px, #3A2519 1.5px 3px)) center / cover;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.hub { display: block; will-change: transform; }
+.pack { will-change: transform; }
+.hub svg { width: 100%; height: 100%; display: block; }
+.label { overflow: hidden; }
+.label-band { position: absolute; left: 3%; right: 3%; top: 10%; height: 14%; background: var(--tape-color, var(--accent)); opacity: 0.9; }
+.label-title {
+  position: absolute; left: 5%; right: 16%; top: 30%; bottom: 8%;
+  display: flex; align-items: center; color: var(--pen); line-height: 1; white-space: nowrap; overflow: hidden;
+  transform: rotate(-1.5deg);
+}
+.hand-en { font-family: 'Permanent Marker', cursive; }
+.hand-ko { font-family: 'Nanum Pen Script', cursive; }
+.label-title.hand-en { font-size: 4.4cqw; }
+.label-title.hand-ko { font-size: 6.4cqw; }
+.label-side {
+  position: absolute; right: 3%; top: 38%; width: 7cqw; aspect-ratio: 1; border-radius: 50%;
+  border: 0.5cqw solid var(--pen); color: var(--pen); display: flex; align-items: center; justify-content: center;
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-size: 4cqw;
+}
+.window-glass { background: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0.08)); }
+.lid { position: absolute; inset: 0; pointer-events: none; will-change: transform; }
+.lid-glass { position: absolute; background: color-mix(in srgb, var(--bg) 18%, transparent); }
+.lid-glass::after {
+  content: ''; position: absolute; inset: 0; mix-blend-mode: screen;
+  background: linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.14) 30%, transparent 42%, transparent 60%, rgba(255, 255, 255, 0.07) 68%, transparent 76%);
+}
+.deck-lcd {
+  position: absolute; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.2cqw; color: var(--lcd); text-shadow: 0 0 1.2cqw color-mix(in srgb, var(--lcd) 45%, transparent);
+}
+.deck-lcd-mode { font-family: 'IBM Plex Mono', monospace; font-size: 1.7cqw; letter-spacing: 0.14em; }
+.deck-lcd-counter { font-family: 'VT323', monospace; font-size: 4.2cqw; letter-spacing: 0.08em; line-height: 1; }
+.headphones { position: absolute; pointer-events: none; filter: drop-shadow(0 1.5cqw 2cqw rgba(0, 0, 0, 0.55)); }
+
+/* 키 */
+.deck-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.key {
+  height: 72px; border-radius: 14px; border: 1px solid var(--line-strong); background: var(--key); color: var(--text);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer;
+  box-shadow: 0 4px 0 #050506; transition: transform 0.12s ease-out, filter 0.12s ease-out;
+}
+.key svg { fill: currentColor; }
+.key-name { font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.24em; }
+.key-play { background: var(--accent); color: var(--ink); font-weight: 700; }
+.key[aria-pressed="true"], .key:active { transform: translateY(4px); box-shadow: none; transition-duration: 0.06s; }
+.deck--image .deck-keys { position: absolute; gap: 0; }
+.deck--image .key {
+  height: 100%; border-radius: 0; border-style: solid; border-width: 0; background: none; box-shadow: none;
+  border-image-repeat: stretch; justify-content: flex-start; padding-top: 7%;
+  color: rgba(0, 0, 0, 0.62); filter: drop-shadow(0 0.35cqw 0.3cqw rgba(0, 0, 0, 0.55));
+}
+.deck--image .key-play { color: rgba(60, 22, 0, 0.7); }
+.deck--image .key svg { height: 1.6cqw; width: auto; filter: drop-shadow(0 0.1cqw 0 rgba(255, 255, 255, 0.22)); }
+.deck--image .key-name { display: none; }
+.deck--image .key[aria-pressed="true"], .deck--image .key:active {
+  transform: translateY(var(--press-y)); filter: brightness(var(--press-b)) drop-shadow(0 0.18cqw 0.15cqw rgba(0, 0, 0, 0.55));
+}
+
+/* CSS 데크(이미지를 못 불러올 때, 시안 A) */
+.deck--css {
+  aspect-ratio: 560 / 350; max-width: 600px; background: #24221F; border: 1px solid #3B3833;
+  border-radius: 4.5% / 7.2%; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+.deck--css .screw { position: absolute; width: 1.6%; aspect-ratio: 1; border-radius: 50%; background: #4A463F; }
+.deck--css .css-label {
+  position: absolute; left: 6%; right: 6%; top: 6%; height: 30%; background: var(--paper); border-radius: 1.4cqw;
+  overflow: hidden; color: var(--pen);
+}
+.deck--css .css-label .band { height: 18%; background: var(--tape-color, var(--accent)); }
+.deck--css .css-label .band2 { height: 6%; background: var(--ai); }
+.deck--css .css-label .row { display: flex; align-items: center; justify-content: space-between; padding: 1.6cqw 3cqw 0; flex-wrap: nowrap; gap: 2cqw; }
+.deck--css .label-title { position: static; transform: rotate(-1.5deg); font-size: 5.4cqw; }
+.deck--css .label-side { position: static; width: 7cqw; font-size: 4cqw; flex: none; }
+.deck--css .css-window { position: absolute; left: 21%; right: 21%; top: 46%; height: 30%; background: rgba(0, 0, 0, 0.38); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 2cqw; }
+.deck--css .pack, .deck--css .hub { position: absolute; }
+.deck--css .css-bottom {
+  position: absolute; left: 24%; right: 24%; bottom: 0; height: 13%; background: #312E29;
+  clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%);
+}
+
+/* LCD 패널 */
+.lcd-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.lcd {
+  flex: 1 1 360px; min-width: 0; background: var(--lcd-bg); border: 1px solid color-mix(in srgb, var(--lcd) 22%, var(--lcd-bg));
+  border-radius: 14px; padding: 14px 18px; color: var(--lcd); box-shadow: inset 0 0 24px color-mix(in srgb, var(--lcd) 8%, transparent);
+}
+.lcd-top { display: flex; justify-content: space-between; gap: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; }
+.lcd-title { font-size: 22px; font-weight: 700; line-height: 1.3; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcd-artist { font-size: 14px; color: var(--lcd-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.counter-box {
+  flex: 0 0 auto; background: var(--lcd-bg); border: 1px solid color-mix(in srgb, var(--lcd) 22%, var(--lcd-bg));
+  border-radius: 14px; padding: 12px 18px; color: var(--lcd); display: flex; flex-direction: column; justify-content: center;
+}
+.counter-box small { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; letter-spacing: 0.3em; color: var(--lcd-dim); }
+.counter-box span { font-family: 'VT323', monospace; font-size: 48px; line-height: 1; letter-spacing: 0.08em; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; }
+.volume { display: flex; align-items: center; gap: 12px; flex: 1 1 260px; font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.24em; color: var(--muted); }
+.volume input { flex: 1; accent-color: var(--lcd); }
+.message { min-height: 1.55em; margin: 0; font-size: 13px; color: var(--muted); }
+
+/* J카드 */
+.jcard { background: var(--paper); color: var(--ink); border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 16px; }
+.jcard-kicker { font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.3em; color: var(--ink-muted); }
+.jcard-title { margin: 4px 0 0; font-family: 'Nanum Pen Script', cursive; font-weight: 400; font-size: 40px; line-height: 1.05; color: var(--pen); overflow-wrap: anywhere; }
+.side-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; background: color-mix(in srgb, var(--ink) 9%, var(--paper)); padding: 5px; border-radius: 999px; }
+.side-tabs button {
+  height: 44px; border: none; border-radius: 999px; background: transparent; color: var(--ink-muted);
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700; letter-spacing: 0.24em; font-size: 13px; cursor: pointer;
+}
+.side-tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+.cap-text { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-muted); }
+.cap-text span:last-child { font-family: 'IBM Plex Mono', monospace; }
+.cap-bar { height: 6px; background: color-mix(in srgb, var(--ink) 14%, var(--paper)); border-radius: 999px; margin-top: 6px; overflow: hidden; }
+.cap-bar div { height: 100%; width: 0; background: var(--ink); border-radius: 999px; }
+.empty-hint { color: var(--ink-muted); font-size: 14px; padding: 8px 12px; }
+
+/* 곡 줄 */
+.tracks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.track {
+  width: 100%; min-height: 52px; border: none; border-radius: 12px; padding: 8px 12px;
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  background: transparent; color: inherit; font: inherit; text-align: left;
+}
+button.track { cursor: pointer; }
+.track .n, .track .d { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+.track .t { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track .a { display: block; font-size: 13px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jcard button.track:hover { background: color-mix(in srgb, var(--ink) 7%, var(--paper)); }
+.jcard .track.is-current { background: var(--ink); color: var(--paper); }
+.jcard .track.is-current .a { color: color-mix(in srgb, var(--paper) 80%, var(--ink)); }
+.track .art { display: none; }
+.lib-list .track { grid-template-columns: 30px 36px minmax(0, 1fr) auto; min-height: 48px; padding: 6px 10px; }
+.lib-list .track .art { display: block; width: 36px; height: 36px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.lib-list .track .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lib-list .track .a { color: var(--muted); }
+.lib-list .track.is-broken { opacity: 0.45; }
+
+/* 선반 */
+.shelf-panel { padding: 26px 28px 0; display: flex; flex-direction: column; gap: 18px; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.panel-head h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.panel-head .count { font-size: 13px; color: var(--muted); margin-left: 12px; }
+.btn-dashed { border-style: dashed; }
+.shelf-scroll { overflow-x: auto; }
+.shelf { display: flex; align-items: flex-end; gap: 10px; min-height: 300px; padding: 26px 6px 0; border-bottom: 12px solid var(--shelf); min-width: max-content; }
+.shelf-empty { align-self: center; color: var(--muted); font-size: 14px; padding-bottom: 26px; }
+.spine {
+  width: 64px; height: 260px; border: none; border-radius: 8px 8px 2px 2px; padding: 12px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: var(--tape-color, var(--accent)); color: var(--ink); cursor: pointer;
+  transition: transform 0.2s ease; box-shadow: inset -6px 0 0 rgba(0, 0, 0, 0.12);
+}
+.spine:hover, .spine:focus-visible { transform: translateY(-8px); }
+.spine.in-deck { transform: translateY(-18px); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
+.spine-len { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
+.spine-title { writing-mode: vertical-rl; flex: 1; min-height: 0; line-height: 1; overflow: hidden; white-space: nowrap; }
+.spine-title.hand-ko { font-size: 26px; }
+.spine-title.hand-en { font-size: 18px; }
+
+/* AI 큐레이터(M6에서 연결) */
+.curator { background: var(--ai-bg); border-color: var(--ai-line); padding: 26px; display: flex; flex-direction: column; gap: 16px; }
+.pill { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ai-text); border: 1px solid var(--ai-line); padding: 4px 10px; border-radius: 999px; }
+.curator label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--ai-text); }
+.curator input { height: 52px; border-radius: 14px; border: 1px solid var(--ai-line); background: color-mix(in srgb, var(--ai-bg) 60%, black); color: var(--text); padding: 0 16px; font-size: 15px; font-family: inherit; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--ai-line); background: transparent; color: var(--ai-text); font-size: 13px; }
+.mix-btn { height: 52px; border-radius: 14px; border: none; background: var(--ai); color: var(--ai-bg); font-size: 15px; font-weight: 700; }
+.curator :disabled { opacity: 0.55; cursor: default; }
+.curator p { margin: 0; font-size: 12px; color: var(--ai-text); }
+
+/* 라이브러리 서랍 */
+.drawer {
+  margin: 0 0 0 auto; height: 100vh; max-height: 100vh; width: min(460px, 100vw); padding: 24px;
+  background: var(--panel); color: var(--text); border: none; border-left: 1px solid var(--line);
+}
+.drawer[open] { display: flex; flex-direction: column; gap: 16px; }
+.drawer::backdrop { background: rgba(0, 0, 0, 0.55); }
+.drawer .lib-list { overflow-y: auto; flex: 1; margin: 0 -8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .key, .spine { transition: none; }
+}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div>
-      <div class="brand-name">AWESOME MIX</div>
-      <div class="brand-sub">STEREO TAPE DECK · 로컬 MP3 플레이어</div>
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true"><span></span></div>
+      <div>
+        <div class="brand-name">AWESOME MIX</div>
+        <div class="brand-sub">STEREO TAPE DECK · 로컬 MP3 플레이어</div>
+      </div>
     </div>
     <div class="actions" id="actions">
-      <button type="button" class="btn" id="openFolder">폴더 열기</button>
-      <label class="btn">파일 고르기
-        <input type="file" id="fileInput" multiple accept=".mp3,.m4a,.ogg,.flac,.wav">
-      </label>
+      <button type="button" class="btn" id="openFolder">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        폴더 열기
+      </button>
+      <button type="button" class="btn" id="openLibrary">라이브러리</button>
+      <button type="button" class="btn toggle" id="hissToggle" aria-pressed="true"><span class="led" aria-hidden="true"></span>HISS</button>
+      <button type="button" class="btn toggle" id="wowToggle" aria-pressed="false"><span class="led" aria-hidden="true"></span>WOW &amp; FLUTTER</button>
+      <button type="button" class="btn btn-round" aria-label="설정" disabled>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
     </div>
   </header>
   <div class="notice" id="notice" role="alert" hidden></div>
-  <main id="main">
-    <section class="panel" aria-label="테이프 데크">
-      <div class="lcd" role="status" aria-live="polite">
-        <div class="lcd-top"><span id="lcdSide">SIDE A · -- · STOP</span><span id="lcdTime">0:00 / 0:00</span></div>
-        <div class="lcd-title" id="lcdTitle">테이프가 비어 있습니다</div>
-        <div class="lcd-artist" id="lcdArtist">폴더를 열거나 음악 파일을 끌어다 놓으세요</div>
-      </div>
-      <div class="keys">
-        <button type="button" class="key" id="keyRew" aria-label="되감기">REW</button>
-        <button type="button" class="key" id="keyPlay" aria-label="재생" aria-pressed="false">PLAY</button>
-        <button type="button" class="key" id="keyStop" aria-label="정지" aria-pressed="true">STOP</button>
-        <button type="button" class="key" id="keyFf" aria-label="빨리 감기">FF</button>
-      </div>
-      <p class="message" id="message" aria-live="polite"></p>
-    </section>
-    <section class="panel" aria-label="테이프 곡 목록">
-      <h2 id="tapeTitle">Awesome Mix Vol. 1</h2>
-      <div class="sides">
-        <div><h3>SIDE A <span id="sideATime"></span></h3><ol class="tracks" id="sideA" data-src="A"></ol></div>
-        <div><h3>SIDE B <span id="sideBTime"></span></h3><ol class="tracks" id="sideB" data-src="B"></ol></div>
-      </div>
-    </section>
-    <section class="panel" aria-label="라이브러리">
-      <h2>라이브러리 <span class="brand-sub" id="libCount"></span></h2>
-      <ol class="tracks" id="libList" data-src="LIB"></ol>
-    </section>
+
+  <main id="main" class="main">
+    <div class="row">
+      <section class="panel panel-wide deck-panel" aria-label="테이프 데크">
+        <div class="deck-caption">AUTO REVERSE · TYPE II CHROME · 2 HEAD</div>
+        <div class="deck-well" id="deckWell">
+          <div class="deck" id="deck"></div>
+        </div>
+        <div class="deck-keys" id="deckKeys">
+          <button type="button" class="key" id="keyRew" aria-label="되감기">
+            <svg aria-hidden="true" width="26" height="18" viewBox="0 0 26 18"><path d="M12 1 1 9l11 8zM25 1 14 9l11 8z"/></svg><span class="key-name">REW</span>
+          </button>
+          <button type="button" class="key key-play" id="keyPlay" aria-label="재생" aria-pressed="false">
+            <svg aria-hidden="true" width="18" height="20" viewBox="0 0 18 20"><path d="M1 1v18l16-9z"/></svg><span class="key-name">PLAY</span>
+          </button>
+          <button type="button" class="key" id="keyStop" aria-label="정지" aria-pressed="true">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18"><rect x="1" y="1" width="16" height="16" rx="2"/></svg><span class="key-name">STOP / EJECT</span>
+          </button>
+          <button type="button" class="key" id="keyFf" aria-label="빨리 감기">
+            <svg aria-hidden="true" width="26" height="18" viewBox="0 0 26 18"><path d="M1 1l11 8-11 8zM14 1l11 8-11 8z"/></svg><span class="key-name">FF</span>
+          </button>
+        </div>
+        <div class="lcd-row">
+          <div class="lcd" role="status" aria-live="polite">
+            <div class="lcd-top"><span id="lcdInfo">NO TAPE</span><span id="lcdTime">0:00 / 0:00</span></div>
+            <div class="lcd-title" id="lcdTitle">테이프가 비어 있습니다</div>
+            <div class="lcd-artist" id="lcdArtist">폴더를 열면 첫 테이프를 만들어 넣어 드립니다</div>
+          </div>
+          <div class="counter-box" id="counterBox" hidden><small>COUNTER</small><span id="counterText">0000</span></div>
+        </div>
+        <div class="controls">
+          <label class="volume">VOLUME <input type="range" id="volume" min="0" max="10" value="7"></label>
+          <button type="button" class="btn" id="flipBtn" disabled>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13l-3-3M20 15H7l3 3"/></svg>
+            <span id="flipLabel">B면으로 뒤집기</span>
+          </button>
+        </div>
+        <p class="message" id="message" aria-live="polite"></p>
+      </section>
+
+      <section class="panel-side jcard" aria-label="J카드 곡 목록">
+        <div>
+          <div class="jcard-kicker" id="jcardKicker">J-CARD · C90</div>
+          <h2 class="jcard-title" id="jcardTitle">빈 테이프</h2>
+        </div>
+        <div class="side-tabs" role="tablist" aria-label="테이프 면">
+          <button type="button" role="tab" id="tabA" aria-selected="true" aria-controls="jcardList">SIDE A</button>
+          <button type="button" role="tab" id="tabB" aria-selected="false" aria-controls="jcardList">SIDE B</button>
+        </div>
+        <div>
+          <div class="cap-text"><span>테이프 용량</span><span id="capText">0:00 / 45:00</span></div>
+          <div class="cap-bar"><div id="capBar"></div></div>
+        </div>
+        <ol class="tracks" id="jcardList" role="tabpanel" aria-labelledby="tabA"></ol>
+      </section>
+    </div>
+
+    <div class="row">
+      <section class="panel panel-wide shelf-panel" aria-label="테이프 선반">
+        <div class="panel-head">
+          <div><h2 style="display:inline">테이프 선반</h2><span class="count" id="shelfCount"></span></div>
+          <button type="button" class="btn btn-dashed" disabled>+ 새 테이프</button>
+        </div>
+        <div class="shelf-scroll">
+          <div class="shelf" id="shelf"><span class="shelf-empty">폴더를 열면 첫 테이프가 여기에 꽂힙니다</span></div>
+        </div>
+      </section>
+
+      <section class="panel panel-side curator" aria-label="AI 믹스테이프 큐레이터">
+        <div class="panel-head"><h2>AI 믹스테이프 큐레이터</h2><span class="pill">OpenRouter</span></div>
+        <label>어떤 분위기의 테이프를 만들까요?
+          <input type="text" placeholder="비 오는 밤, 창밖 불빛 보며 드라이브" disabled>
+        </label>
+        <div class="chips">
+          <button type="button" class="chip" disabled>일요일 아침 커피</button>
+          <button type="button" class="chip" disabled>80년대 신스 러닝</button>
+          <button type="button" class="chip" disabled>라이브러리 자동 분류</button>
+        </div>
+        <button type="button" class="mix-btn" disabled>믹스 만들기 · C90</button>
+        <p>곡 제목·가수 같은 정보만 보내고, 음원 파일은 내 PC 밖으로 나가지 않아요. (준비 중)</p>
+      </section>
+    </div>
   </main>
 </div>
+
+<dialog class="drawer" id="libraryDrawer" aria-labelledby="libTitle">
+  <div class="panel-head">
+    <div><h2 id="libTitle" style="display:inline">라이브러리</h2><span class="count" id="libCount"></span></div>
+    <button type="button" class="btn btn-round" id="closeLibrary" aria-label="라이브러리 닫기">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="actions">
+    <label class="btn">파일 고르기
+      <input type="file" id="fileInput" multiple accept=".mp3,.m4a,.ogg,.flac,.wav">
+    </label>
+    <span class="brand-sub">파일·폴더를 창에 끌어다 놓아도 됩니다</span>
+  </div>
+  <ol class="tracks lib-list" id="libList"></ol>
+</dialog>
 
 <script type="module">
 const $ = (id) => document.getElementById(id);
@@ -156,8 +428,168 @@ const fmt = (sec) => {
   return h ? `${h}:${pad2(m)}:${pad2(s)}` : `${m}:${pad2(s)}`;
 };
 const showMessage = (text) => { $('message').textContent = text; };
+const setText = (el, text) => { if (el && el.textContent !== text) el.textContent = text; };
+const HANGUL = /[ㄱ-ㆎ가-힣]/;
+const handClass = (text) => (HANGUL.test(text) ? 'hand-ko' : 'hand-en');
 
 /* ===== Assets: assets.json 읽기, 이미지 미리 불러오기, 좌표를 %로 변환 ===== */
+const ASSET_ROOT = 'assets/';
+const KEY_IDS = { rew: 'keyRew', play: 'keyPlay', stop: 'keyStop', ff: 'keyFf' };
+
+const loadImage = (src) => new Promise((resolve, reject) => {
+  const img = new Image();
+  img.onload = () => resolve(img);
+  img.onerror = () => reject(new Error(src + ' 이미지를 불러오지 못했습니다'));
+  img.src = src;
+});
+
+async function loadAssets() {
+  const res = await fetch(ASSET_ROOT + 'assets.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error('assets.json을 읽지 못했습니다(' + res.status + ')');
+  const a = await res.json();
+  const required = {
+    deck: a.deck.image, lid: a.deck.lid.image, shell: a.cassette.image,
+    label: a.cassette.label, headphones: a.headphones.image, ...a.keys.files,
+  };
+  const imgs = {};
+  await Promise.all(Object.entries(required).map(async ([k, p]) => { imgs[k] = await loadImage(ASSET_ROOT + p); }));
+  // 선택 이미지는 없어도 된다(case-spine은 지금 쓰지 않는다)
+  const optional = Object.entries(a.optional || {}).filter(([k]) => k === 'cassetteHub' || k === 'tapePackTexture');
+  await Promise.all(optional.map(async ([k, p]) => {
+    try { imgs[k] = await loadImage(ASSET_ROOT + p); } catch { /* CSS로 대체 */ }
+  }));
+  return { a, imgs };
+}
+
+const pct = (v, total) => (v / total) * 100 + '%';
+function placeRect(el, [x, y, w, h], W, H) {
+  Object.assign(el.style, { left: pct(x, W), top: pct(y, H), width: pct(w, W), height: pct(h, H) });
+}
+function placeCircle(el, [cx, cy, r], W, H) { placeRect(el, [cx - r, cy - r, 2 * r, 2 * r], W, H); }
+
+function el(tag, className, parent) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (parent) parent.append(node);
+  return node;
+}
+function imgEl(src, className, parent) {
+  const node = el('img', className, parent);
+  node.src = src;
+  node.alt = '';
+  node.draggable = false;
+  return node;
+}
+
+const HUB_SVG = '<svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="25" fill="#E8E2D6"/><circle cx="26" cy="26" r="11" fill="#24221F"/><path d="M26 15v-5M26 37v5M15 26h-5M37 26h5M18.2 18.2l-3.5-3.5M33.8 33.8l3.5 3.5" stroke="#24221F" stroke-width="3" stroke-linecap="round"/></svg>';
+
+function makeHub(imgs, parent) {
+  if (imgs?.cassetteHub) return imgEl(imgs.cassetteHub.src, 'hub', parent);
+  const hub = el('div', 'hub', parent);
+  hub.innerHTML = HUB_SVG;
+  return hub;
+}
+
+// 실사 이미지 레이어로 데크를 쌓는다(PRD 6-6)
+function buildImageDeck({ a, imgs }) {
+  const deckEl = $('deck');
+  const [W, H] = a.deck.size;
+  deckEl.className = 'deck deck--image';
+  deckEl.style.aspectRatio = `${W} / ${H}`;
+  deckEl.style.setProperty('--press-y', a.keys.pressed.translateY);
+  deckEl.style.setProperty('--press-b', a.keys.pressed.brightness);
+  deckEl.replaceChildren();
+
+  imgEl(imgs.deck.src, 'layer', deckEl);
+
+  // 카세트는 칸(bay) 밖으로 나가지 않게 자른다
+  const [bx, by, bw, bh] = a.deck.bay;
+  const clip = el('div', 'bay-clip', deckEl);
+  clip.style.clipPath = `inset(${pct(by, H)} ${pct(W - bx - bw, W)} ${pct(H - by - bh, H)} ${pct(bx, W)})`;
+
+  const [CW, CH] = a.cassette.size;
+  const cassette = el('div', 'cassette', clip);
+  cassette.id = 'cassette';
+  cassette.style.visibility = 'hidden'; // 사용자가 선반에서 넣을 때 보인다
+  placeRect(cassette, a.cassette.seatInBay, W, H);
+  if (imgs.tapePackTexture) cassette.style.setProperty('--pack-img', `url("${imgs.tapePackTexture.src}")`);
+  const packL = el('div', 'pack', cassette);
+  const packR = el('div', 'pack', cassette);
+  const hubL = makeHub(imgs, cassette);
+  const hubR = makeHub(imgs, cassette);
+  imgEl(imgs.shell.src, 'layer', cassette);
+  const label = el('div', 'label', cassette);
+  placeRect(label, a.cassette.labelArea, CW, CH);
+  imgEl(imgs.label.src, 'layer', label);
+  el('div', 'label-band', label);
+  el('div', 'label-title', label).id = 'labelTitle';
+  el('div', 'label-side', label).id = 'labelSide';
+  placeRect(el('div', 'window-glass', cassette), a.cassette.window, CW, CH);
+
+  // 덮개: 경첩선(hingeY)을 축으로 연다
+  const lid = el('div', 'lid', deckEl);
+  lid.id = 'lid';
+  lid.style.transformOrigin = `50% ${pct(a.deck.lid.hingeY, H)}`;
+  imgEl(imgs.lid.src, 'layer', lid);
+  placeRect(el('div', 'lid-glass', lid), a.deck.bay, W, H);
+
+  const lcd = el('div', 'deck-lcd', deckEl);
+  lcd.setAttribute('aria-hidden', 'true');
+  placeRect(lcd, a.deck.lcd, W, H);
+  el('span', 'deck-lcd-mode', lcd).id = 'deckLcdMode';
+  el('span', 'deck-lcd-counter', lcd).id = 'deckLcdCounter';
+
+  // 키: keyChannel을 4칸으로 나누고, 양 끝(edge)은 비율대로 두고 가운데만 늘린다
+  const keys = $('deckKeys');
+  const [kx, ky, kw, kh] = a.deck.keyChannel;
+  const { mode, gap, inset, edge } = a.keys.layout;
+  const keyH = kh - inset * 2;
+  const slotW = (kw - gap * 3) / 4;
+  deckEl.append(keys);
+  placeRect(keys, [kx, ky + inset, kw, keyH], W, H);
+  keys.style.columnGap = pct(gap, kw);
+  for (const [name, id] of Object.entries(KEY_IDS)) {
+    const btn = $(id);
+    const src = imgs[name].src;
+    const [iw, ih] = a.keys.sizes?.[name] || [imgs[name].naturalWidth, imgs[name].naturalHeight];
+    if (mode === 'contain') {
+      btn.style.background = `url("${src}") center / contain no-repeat`;
+    } else {
+      const edgeW = Math.min((iw * edge * keyH) / ih, slotW / 2);
+      btn.style.borderImageSource = `url("${src}")`;
+      btn.style.borderImageSlice = `0 ${edge * 100}% fill`;
+      btn.style.borderImageWidth = `0 ${(edgeW / slotW) * 100}%`;
+    }
+  }
+
+  placeRect(imgEl(imgs.headphones.src, 'headphones', deckEl), a.headphones.place, W, H);
+
+  Reels.init({ W: CW, H: CH, left: a.cassette.hubs.left, right: a.cassette.hubs.right, rMax: a.cassette.packMaxRadius, packL, packR, hubL, hubR });
+}
+
+// 이미지를 못 불러오면 시안 A의 CSS 데크로 그린다(숫자는 시안 A의 560×350 기준)
+const CSS_DECK = { W: 560, H: 350, left: [170, 215, 26], right: [390, 215, 26], rMax: 80 };
+
+function buildCssDeck() {
+  const deckEl = $('deck');
+  deckEl.className = 'deck deck--css';
+  deckEl.innerHTML = `
+    <div class="screw" style="left:2.2%;top:3.4%"></div><div class="screw" style="right:2.2%;top:3.4%"></div>
+    <div class="screw" style="left:2.2%;bottom:4%"></div><div class="screw" style="right:2.2%;bottom:4%"></div>
+    <div class="css-label" id="cassette">
+      <div class="band"></div><div class="band2"></div>
+      <div class="row"><div class="label-title" id="labelTitle"></div><div class="label-side" id="labelSide"></div></div>
+    </div>
+    <div class="css-window"></div>
+    <div class="css-bottom"></div>`;
+  $('cassette').style.visibility = 'hidden';
+  const packL = el('div', 'pack', deckEl);
+  const packR = el('div', 'pack', deckEl);
+  const hubL = makeHub(null, deckEl);
+  const hubR = makeHub(null, deckEl);
+  $('counterBox').hidden = false;
+  Reels.init({ ...CSS_DECK, packL, packR, hubL, hubR });
+}
 
 /* ===== Store: IndexedDB 읽기·쓰기 (roots, tracks, art, tapes, settings) ===== */
 
@@ -317,7 +749,7 @@ async function addFiles(entries) {
     showMessage(`녹음 완료 · ${library.size}곡`
       + (alac ? ` · ALAC(애플 무손실) ${alac}곡은 크롬·엣지에서 재생할 수 없어 건너뜁니다(FLAC로 바꾸면 재생됩니다)` : '')
       + (other ? ` · 읽을 수 없는 파일 ${other}개` : ''));
-    buildDefaultTape();
+    if (!tapeHasTracks()) buildDefaultTape();
   }
 }
 
@@ -375,40 +807,59 @@ const Engine = {
   play() { return audio.play(); },
   pause() { audio.pause(); },
   seek(sec) { audio.currentTime = sec; },
+  setVolume(v) { audio.volume = v; },
 };
 
 /* ===== Deck: 테이프 상태 머신, 면 전환, 넣기·꺼내기 ===== */
-const tape = { title: 'Awesome Mix Vol. 1', sideA: [], sideB: [] };
-const deck = { state: 'STOP', source: 'A', queue: [], index: 0, ended: false };
+const TAPE_SIDE_SEC = { C46: 23 * 60, C60: 30 * 60, C90: 45 * 60 };
+const tape = { title: 'Awesome Mix Vol. 1', length: 'C90', color: 'var(--accent)', sideA: [], sideB: [] };
+const deck = { state: 'STOP', loaded: false, lid: 'closed', busy: false, side: 'A', queue: [], index: 0, ended: false };
+let jcardSide = 'A'; // J카드에서 보고 있는 면
 
-// 곡 순서를 지키면서, 두 면의 재생 시간 차이가 가장 작은 곳에서 자른다
-function splitSides(ids) {
-  const secs = ids.map((id) => library.get(id).sec);
-  const total = secs.reduce((a, b) => a + b, 0);
-  let acc = 0, cut = 0, best = Infinity;
-  for (let i = 0; i <= ids.length; i++) {
-    const diff = Math.abs(total - 2 * acc);
-    if (diff <= best) { best = diff; cut = i; }
-    if (i < ids.length) acc += secs[i];
+const tapeHasTracks = () => tape.sideA.length + tape.sideB.length > 0;
+const sideIds = (side) => (side === 'A' ? tape.sideA : tape.sideB);
+const sumSec = (ids) => ids.reduce((acc, id) => acc + library.get(id).sec, 0);
+const currentTrack = () => library.get(deck.queue[deck.index]);
+
+function shuffle(list) {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
   }
-  return { A: ids.slice(0, cut), B: ids.slice(cut) };
+  return list;
 }
 
+// 곡을 섞어 덜 찬 면부터 담는다. 면 길이(C90이면 45분)를 넘는 곡은 다른 면에, 둘 다 넘으면 뺀다.
+function fillTapeRandomly(ids, sideSec) {
+  const sides = { A: [], B: [] };
+  const used = { A: 0, B: 0 };
+  for (const id of shuffle([...ids])) {
+    const sec = library.get(id).sec;
+    const order = used.A <= used.B ? ['A', 'B'] : ['B', 'A'];
+    const side = order.find((s) => used[s] + sec <= sideSec);
+    if (!side) continue;
+    sides[side].push(id);
+    used[side] += sec;
+  }
+  return sides;
+}
+
+// 기본 테이프는 선반에만 꽂는다. 데크에는 사용자가 넣는다(시나리오 A).
 function buildDefaultTape() {
-  const { A, B } = splitSides(libraryOrder.filter((id) => !library.get(id).broken));
+  const playable = libraryOrder.filter((id) => !library.get(id).broken);
+  const { A, B } = fillTapeRandomly(playable, TAPE_SIDE_SEC[tape.length]);
   tape.sideA = A;
   tape.sideB = B;
+  jcardSide = 'A';
+  if (tapeHasTracks()) showMessage($('message').textContent + ' · 선반의 테이프를 눌러 데크에 넣으세요.');
   render();
 }
-
-const playableLibrary = () => libraryOrder.filter((id) => !library.get(id).broken);
-const sourceIds = (src) => (src === 'A' ? tape.sideA : src === 'B' ? tape.sideB : playableLibrary());
-const currentTrack = () => library.get(deck.queue[deck.index]);
 
 function setState(state) {
   deck.state = state;
   $('keyPlay').setAttribute('aria-pressed', String(state === 'PLAY'));
   $('keyStop').setAttribute('aria-pressed', String(state === 'STOP'));
+  Reels.setTarget(state === 'PLAY' ? 1 : 0); // 릴은 재생 중에만 돈다
   render();
 }
 
@@ -430,37 +881,175 @@ function loadIndex(index) {
   render(); // 재생이 시작되기 전에 LCD·목록부터 바꾼다
 }
 
-// id를 주면 그 곡부터, 없으면 첫 곡부터
-function playFrom(src, id = null) {
-  deck.source = src;
-  deck.queue = [...sourceIds(src)];
+// 지금 데크에 든 면의 id 곡부터(없으면 첫 곡부터) 재생한다
+function playFrom(id = null) {
+  deck.queue = [...sideIds(deck.side)];
+  if (!deck.queue.length) { showMessage(deck.side + '면이 비어 있습니다.'); return; }
+  jcardSide = deck.side;
   loadIndex(id ? Math.max(0, deck.queue.indexOf(id)) : 0);
   startPlayback();
 }
 
 function pressPlay() {
-  if (!deck.queue.length) {
-    if (tape.sideA.length) return playFrom('A');
-    if (playableLibrary().length) return playFrom('LIB');
-    showMessage('먼저 폴더를 열거나 음악 파일을 끌어다 놓으세요.');
+  if (deck.busy) return;
+  if (!deck.loaded) {
+    showMessage(tapeHasTracks() ? '먼저 선반의 테이프를 눌러 데크에 넣으세요.' : '먼저 폴더를 열어 테이프를 만들어 주세요.');
     return;
   }
-  if (deck.ended) { showMessage('면이 끝났습니다. 목록에서 곡을 골라 주세요.'); return; }
+  if (!deck.queue.length) return playFrom();
+  if (deck.ended) { showMessage('면이 끝났습니다. 뒤집기 버튼으로 다른 면을 들어 보세요.'); return; }
   startPlayback();
 }
 
+// STOP/EJECT: 재생 중이면 정지, 정지 상태에서 한 번 더 누르면 꺼내기(PRD 5-5)
 function pressStop() {
+  if (deck.busy) return;
+  if (deck.state === 'PLAY') {
+    Engine.pause();
+    setState('STOP');
+  } else if (deck.loaded) {
+    runDeckAction(ejectTape);
+  } else if (deck.lid === 'open') {
+    runDeckAction(closeLid);
+  }
+}
+
+// J카드에서 곡을 고르면, 다른 면이면 먼저 뒤집는다
+async function pickTrack(side, id) {
+  if (deck.busy) return;
+  if (!deck.loaded) { showMessage('먼저 선반의 테이프를 눌러 데크에 넣으세요.'); return; }
+  if (side !== deck.side) await runDeckAction(flipSide);
+  playFrom(id);
+}
+
+/* --- 덮개·넣기·꺼내기·뒤집기 연출(PRD 5-5). transform·opacity만 움직인다 --- */
+const LID_OPEN_DEG = -35; // 경첩이 아래에 있어, 음수면 덮개 위쪽이 사용자 쪽으로 넘어온다
+const LID_OPEN_MS = 350;
+const LID_CLOSE_MS = 300;
+const CASSETTE_MOVE_MS = 400;
+const FLIP_HALF_MS = 260;
+const OUT_OF_BAY = 'translateY(-110%)'; // 칸 위로 완전히 빠진 자리
+const lidTransform = (deg) => `perspective(300cqw) rotateX(${deg}deg)`;
+const flipTransform = (deg) => `perspective(300cqw) translateY(-12%) rotateY(${deg}deg)`;
+
+// 애니메이션이 끝나면 마지막 모습을 style에 남기고 애니메이션은 지운다
+async function animateEl(elem, keyframes, duration, easing = 'cubic-bezier(.3,.7,.3,1)') {
+  if (!elem) return;
+  const anim = elem.animate(keyframes, { duration, easing, fill: 'forwards' });
+  await anim.finished;
+  anim.commitStyles();
+  anim.cancel();
+}
+
+async function runDeckAction(action) {
+  if (deck.busy) return;
+  deck.busy = true;
+  render();
+  try { await action(); } finally { deck.busy = false; render(); }
+}
+
+async function openLid() {
+  if (deck.lid === 'open') return;
+  deck.lid = 'open';
+  const lid = $('lid');
+  if (lid && reduceMotion.matches) lid.style.transform = lidTransform(LID_OPEN_DEG);
+  else await animateEl(lid, [{ transform: lidTransform(0) }, { transform: lidTransform(LID_OPEN_DEG) }], LID_OPEN_MS);
+}
+
+async function closeLid() {
+  if (deck.lid === 'closed') return;
+  deck.lid = 'closed';
+  const lid = $('lid');
+  if (lid && reduceMotion.matches) lid.style.transform = lidTransform(0);
+  else await animateEl(lid, [{ transform: lidTransform(LID_OPEN_DEG) }, { transform: lidTransform(0) }], LID_CLOSE_MS, 'cubic-bezier(.5,0,.75,0)');
+}
+
+// 덮개 열림 → 카세트가 위에서 내려와 자리 잡음 → 덮개 닫힘
+async function insertTape() {
+  if (deck.loaded || !tapeHasTracks()) return;
+  await openLid();
+  deck.loaded = true;
+  deck.queue = [];
+  deck.index = 0;
+  deck.ended = false;
+  jcardSide = deck.side;
+  renderCassette();
+  renderLcd();
+  const cassette = $('cassette');
+  cassette.style.visibility = 'visible';
+  if (reduceMotion.matches) {
+    cassette.style.transform = 'none';
+    await animateEl(cassette, [{ opacity: 0 }, { opacity: 1 }], CASSETTE_MOVE_MS);
+  } else {
+    await animateEl(cassette, [{ transform: OUT_OF_BAY }, { transform: 'none' }], CASSETTE_MOVE_MS, 'cubic-bezier(.2,.8,.3,1)');
+  }
+  await closeLid();
+  showMessage(`${tape.title} · ${deck.side}면을 넣었습니다. PLAY를 누르세요.`);
+}
+
+// 덮개 열림 → 카세트가 위로 빠져 선반으로 돌아감
+async function ejectTape() {
+  if (!deck.loaded) return;
   Engine.pause();
   setState('STOP');
+  await openLid();
+  const cassette = $('cassette');
+  if (reduceMotion.matches) await animateEl(cassette, [{ opacity: 1 }, { opacity: 0 }], CASSETTE_MOVE_MS);
+  else await animateEl(cassette, [{ transform: 'none' }, { transform: OUT_OF_BAY }], CASSETTE_MOVE_MS, 'cubic-bezier(.5,0,.7,.4)');
+  if (cassette) {
+    cassette.style.visibility = 'hidden';
+    cassette.style.opacity = '';
+  }
+  deck.loaded = false;
+  deck.queue = [];
+  deck.ended = false;
+  showMessage('테이프를 꺼냈습니다. 선반의 테이프를 누르면 다시 넣습니다.');
+}
+
+// 덮개 열림 → 카세트가 Y축으로 뒤집힘(라벨 A↔B) → 다시 들어감 → 덮개 닫힘
+async function flipSide() {
+  if (!deck.loaded) return;
+  Engine.pause();
+  setState('STOP');
+  await openLid();
+  const cassette = $('cassette');
+  if (reduceMotion.matches) await animateEl(cassette, [{ opacity: 1 }, { opacity: 0 }], FLIP_HALF_MS);
+  else await animateEl(cassette, [{ transform: 'none' }, { transform: flipTransform(90) }], FLIP_HALF_MS, 'ease-in');
+  // 옆으로 선 순간에 면을 바꾼다
+  deck.side = deck.side === 'A' ? 'B' : 'A';
+  deck.queue = [];
+  deck.index = 0;
+  deck.ended = false;
+  jcardSide = deck.side;
+  renderCassette();
+  renderLcd();
+  if (reduceMotion.matches) {
+    await animateEl(cassette, [{ opacity: 0 }, { opacity: 1 }], FLIP_HALF_MS);
+    if (cassette) cassette.style.opacity = '';
+  } else {
+    await animateEl(cassette, [{ transform: flipTransform(-90) }, { transform: 'none' }], FLIP_HALF_MS, 'ease-out');
+  }
+  await closeLid();
+  showMessage(`${deck.side}면으로 뒤집었습니다.`);
 }
 
 // M1 임시: REW·FF는 이전·다음 곡(누르고 있는 동안 감기는 M3에서)
 function step(dir) {
-  if (!deck.queue.length) return;
+  if (deck.busy || !deck.queue.length) return;
   const next = Math.min(deck.queue.length - 1, Math.max(0, deck.index + dir));
   if (next === deck.index) { if (dir < 0) Engine.seek(0); return; }
   loadIndex(next);
   if (deck.state === 'PLAY') startPlayback();
+}
+
+// 면 전체에서 지난 비율(0~1)
+function sideProgress() {
+  if (!deck.queue.length) return 0;
+  if (deck.ended) return 1;
+  const total = sumSec(deck.queue);
+  if (!total) return 0;
+  const before = sumSec(deck.queue.slice(0, deck.index));
+  return Math.min(1, (before + (audio.currentTime || 0)) / total);
 }
 
 audio.addEventListener('ended', () => {
@@ -470,87 +1059,224 @@ audio.addEventListener('ended', () => {
   } else {
     deck.ended = true;
     setState('STOP');
-    showMessage((deck.source === 'LIB' ? '라이브러리' : deck.source + '면') + '이 끝났습니다.');
+    showMessage(deck.side + '면이 끝났습니다.');
   }
 });
 audio.addEventListener('timeupdate', () => renderLcd());
 
 /* ===== Reels: 릴 각도·반지름 갱신 ===== */
+const TAPE_SPEED_CM = 4.76;      // 카세트 주행 속도(cm/s)
+const CASSETTE_WIDTH_CM = 10.04; // 카세트 셸 가로 길이(cm)
+const SPIN_UP_SEC = 0.1;         // 속도 변화의 시간 상수(약 0.3초면 다 붙는다)
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+const Reels = {
+  geo: null,
+  p: 0,
+  rL: 0,
+  rR: 0,
+  angleL: 0,
+  angleR: 0,
+  speed: 0,  // 지금 배속(재생 1, 정지 0)
+  target: 0, // 가려는 배속
+  raf: 0,
+  last: 0,
+  init(geo) {
+    this.geo = geo;
+    // 감긴 테이프는 가장 클 때 크기로 놓고, 매 프레임 scale만 바꾼다
+    placeCircle(geo.packL, [geo.left[0], geo.left[1], geo.rMax], geo.W, geo.H);
+    placeCircle(geo.packR, [geo.right[0], geo.right[1], geo.rMax], geo.W, geo.H);
+    placeCircle(geo.hubL, geo.left, geo.W, geo.H);
+    placeCircle(geo.hubR, geo.right, geo.W, geo.H);
+    this.setProgress(this.p);
+  },
+  // 감긴 테이프 반지름 r = √(r_h² + f·(r_max² − r_h²))  (PRD 6-3)
+  radius(f, rh) {
+    const { rMax } = this.geo;
+    return Math.sqrt(rh * rh + f * (rMax * rMax - rh * rh));
+  },
+  setProgress(p) {
+    this.p = p;
+    const g = this.geo;
+    if (!g) return;
+    this.rL = this.radius(1 - p, g.left[2]);
+    this.rR = this.radius(p, g.right[2]);
+    g.packL.style.transform = `scale(${this.rL / g.rMax})`;
+    g.packR.style.transform = `scale(${this.rR / g.rMax})`;
+  },
+  setTarget(target) {
+    this.target = target;
+    if (!this.raf && this.geo) {
+      this.last = performance.now();
+      this.raf = requestAnimationFrame((t) => this.tick(t));
+    }
+  },
+  tick(now) {
+    const dt = Math.min(0.1, (now - this.last) / 1000); // 창이 숨겨졌다 돌아와도 튀지 않게
+    this.last = now;
+    this.speed += (this.target - this.speed) * Math.min(1, dt / SPIN_UP_SEC);
+    if (this.target === 0 && Math.abs(this.speed) < 0.002) {
+      this.speed = 0;
+      this.raf = 0;
+      return;
+    }
+    const g = this.geo;
+    this.setProgress(sideProgress());
+    // 화면상 테이프 속도 v(카세트 이미지 px/s), ω = v / r
+    const v = (TAPE_SPEED_CM * g.W) / CASSETTE_WIDTH_CM * this.speed * (reduceMotion.matches ? 0.35 : 1);
+    // 테이프가 왼쪽에서 오른쪽으로 감기므로 두 릴 모두 반시계 방향
+    this.angleL -= (v / this.rL) * dt;
+    this.angleR -= (v / this.rR) * dt;
+    g.hubL.style.transform = `rotate(${this.angleL}rad)`;
+    g.hubR.style.transform = `rotate(${this.angleR}rad)`;
+    this.raf = requestAnimationFrame((t) => this.tick(t));
+  },
+};
 
 /* ===== Shelf: 테이프 목록, 끌어서 넣기, 편집기 ===== */
+function renderShelf() {
+  const shelf = $('shelf');
+  setText($('shelfCount'), (tapeHasTracks() ? '1개' : '0개') + (library.size ? ` · 라이브러리 ${library.size}곡` : '')
+    + (scan.done < scan.total ? ` · 테이프 녹음 중… ${scan.done}/${scan.total}` : ''));
+  if (!tapeHasTracks()) return;
+  let spine = shelf.querySelector('.spine');
+  if (!spine) {
+    spine = el('button', 'spine');
+    spine.type = 'button';
+    spine.innerHTML = '<span class="spine-len"></span><span class="spine-title"></span>';
+    spine.addEventListener('click', () => {
+      if (deck.loaded) showMessage('이 테이프는 데크에 들어 있습니다. 꺼내려면 정지 상태에서 STOP/EJECT를 누르세요.');
+      else runDeckAction(insertTape);
+    });
+    shelf.replaceChildren(spine);
+  }
+  spine.style.setProperty('--tape-color', tape.color);
+  spine.classList.toggle('in-deck', deck.loaded);
+  setText(spine.querySelector('.spine-len'), tape.length);
+  const title = spine.querySelector('.spine-title');
+  setText(title, tape.title);
+  title.className = 'spine-title ' + handClass(tape.title);
+  spine.setAttribute('aria-label', `${tape.title}, ${tape.length}` + (deck.loaded ? ', 데크에 들어 있음' : ''));
+}
 
 /* ===== Curator: OpenRouter 호출, 응답 검증, 미리 보기 ===== */
 
-/* ===== 화면 그리기(M1 임시) ===== */
+/* ===== 화면 그리기 ===== */
 let renderQueued = false;
 function render() {
   if (renderQueued) return;
   renderQueued = true;
   requestAnimationFrame(() => {
     renderQueued = false;
-    renderList($('sideA'), tape.sideA, 'A');
-    renderList($('sideB'), tape.sideB, 'B');
-    renderList($('libList'), libraryOrder, 'LIB');
-    $('sideATime').textContent = sideTime(tape.sideA);
-    $('sideBTime').textContent = sideTime(tape.sideB);
-    $('libCount').textContent = scan.done < scan.total
-      ? `테이프 녹음 중… ${scan.done}/${scan.total}` : library.size ? `${library.size}곡` : '';
+    renderJcard();
+    renderShelf();
+    renderCassette();
+    if ($('libraryDrawer').open) renderLibrary();
     renderLcd();
   });
 }
 
-const sideTime = (ids) => (ids.length ? '· ' + fmt(ids.reduce((a, id) => a + library.get(id).sec, 0)) : '');
-
-function makeRow() {
+function makeRow(tag) {
   const li = document.createElement('li');
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'track';
-  btn.innerHTML = '<span class="n"></span><span class="art"></span><span><span class="t"></span><span class="a"></span></span><span class="d"></span>';
-  li.append(btn);
+  const row = document.createElement(tag);
+  row.className = 'track';
+  if (tag === 'button') row.type = 'button';
+  row.innerHTML = '<span class="n"></span><span class="art"></span><span><span class="t"></span><span class="a"></span></span><span class="d"></span>';
+  li.append(row);
   return li;
 }
 
-const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
-
-function fillRow(btn, t, i, isCurrent) {
-  btn.dataset.id = t.id;
-  btn.disabled = t.broken;
-  btn.classList.toggle('is-current', isCurrent);
-  if (isCurrent) btn.setAttribute('aria-current', 'true'); else btn.removeAttribute('aria-current');
-  setText(btn.querySelector('.n'), String(i + 1).padStart(2, '0'));
-  setText(btn.querySelector('.t'), t.title);
+function fillRow(row, t, i, isCurrent) {
+  row.dataset.id = t.id;
+  row.classList.toggle('is-current', isCurrent);
+  row.classList.toggle('is-broken', t.broken);
+  if (isCurrent) row.setAttribute('aria-current', 'true'); else row.removeAttribute('aria-current');
+  setText(row.querySelector('.n'), String(i + 1).padStart(2, '0'));
+  setText(row.querySelector('.t'), t.title);
   const artist = t.artist || '알 수 없는 가수';
-  setText(btn.querySelector('.a'), !t.broken ? artist
+  setText(row.querySelector('.a'), !t.broken ? artist
     : t.brokenReason === 'ALAC' ? artist + ' · ALAC 재생 불가' : '읽을 수 없는 파일');
-  setText(btn.querySelector('.d'), t.ready ? fmt(t.sec) : '--:--');
-  const art = btn.querySelector('.art');
+  setText(row.querySelector('.d'), t.ready ? fmt(t.sec) : '--:--');
+  const art = row.querySelector('.art');
   if (t.art && !art.firstChild) art.append(Object.assign(document.createElement('img'), { src: t.art, alt: '' }));
 }
 
 // 스캔 중에도 누를 수 있게, 줄은 다시 만들지 않고 내용만 고친다
-function renderList(ol, ids, src) {
+function renderList(ol, ids, currentId, tag) {
   const rows = ol.rows || (ol.rows = new Map());
-  const current = deck.queue.length && deck.source === src ? deck.queue[deck.index] : null;
   const lis = ids.map((id, i) => {
-    if (!rows.has(id)) rows.set(id, makeRow());
+    if (!rows.has(id)) rows.set(id, makeRow(tag));
     const li = rows.get(id);
-    fillRow(li.firstChild, library.get(id), i, id === current);
+    fillRow(li.firstChild, library.get(id), i, id === currentId);
     return li;
   });
   if (lis.length !== ol.children.length || lis.some((li, i) => ol.children[i] !== li)) ol.replaceChildren(...lis);
 }
 
+function renderJcard() {
+  const has = tapeHasTracks();
+  setText($('jcardKicker'), 'J-CARD · ' + tape.length);
+  setText($('jcardTitle'), has ? tape.title : '빈 테이프');
+  for (const side of ['A', 'B']) $('tab' + side).setAttribute('aria-selected', String(jcardSide === side));
+  $('jcardList').setAttribute('aria-labelledby', 'tab' + jcardSide);
+  const ids = sideIds(jcardSide);
+  const used = sumSec(ids);
+  const total = TAPE_SIDE_SEC[tape.length];
+  setText($('capText'), `${fmt(used)} / ${fmt(total)}`);
+  $('capBar').style.width = Math.min(100, (used / total) * 100) + '%';
+  const currentId = deck.queue.length && deck.side === jcardSide ? deck.queue[deck.index] : null;
+  if (!has) {
+    if (!$('jcardList').querySelector('.empty-hint')) {
+      $('jcardList').innerHTML = '<li class="empty-hint">폴더를 열면 곡을 골라 테이프를 채웁니다.</li>';
+      $('jcardList').rows = null;
+    }
+    return;
+  }
+  renderList($('jcardList'), ids, currentId, 'button');
+}
+
+function renderLibrary() {
+  setText($('libCount'), scan.done < scan.total ? `테이프 녹음 중… ${scan.done}/${scan.total}` : library.size ? `${library.size}곡` : '');
+  renderList($('libList'), libraryOrder, null, 'div');
+}
+
+function renderCassette() {
+  const cassette = $('cassette');
+  if (!cassette) return;
+  cassette.style.setProperty('--tape-color', tape.color);
+  const title = $('labelTitle');
+  setText(title, tape.title);
+  title.className = 'label-title ' + handClass(tape.title);
+  setText($('labelSide'), deck.side);
+  setText($('flipLabel'), (deck.side === 'A' ? 'B' : 'A') + '면으로 뒤집기');
+  $('flipBtn').disabled = !deck.loaded || deck.busy;
+}
+
 function renderLcd() {
   const t = deck.queue.length ? currentTrack() : null;
-  const side = deck.source === 'LIB' ? 'LIBRARY' : 'SIDE ' + deck.source;
-  const no = t ? String(deck.index + 1).padStart(2, '0') : '--';
-  $('lcdSide').textContent = `${side} · ${no} · ${deck.state}`;
-  $('lcdTime').textContent = t ? `${fmt(audio.currentTime || 0)} / ${fmt(t.sec)}` : '0:00 / 0:00';
+  const p = sideProgress();
+  const counter = String(Math.round(p * 999)).padStart(4, '0');
+  const no = t ? pad2(deck.index + 1) : '--';
+  const modeText = deck.loaded ? `SIDE ${deck.side} · ${deck.state}` : 'NO TAPE';
+  setText($('deckLcdMode'), modeText);
+  setText($('deckLcdCounter'), counter);
+  setText($('counterText'), counter);
+  // 실사 데크는 면·상태를 이미지 LCD 창에, CSS 데크는 아래 LCD에 함께 보여 준다
+  const imageMode = !!$('deckLcdMode');
+  setText($('lcdInfo'), !deck.loaded ? 'NO TAPE'
+    : imageMode ? `TRACK ${no} / ${pad2(sideIds(deck.side).length)}` : `SIDE ${deck.side} · ${no} · ${deck.state}`);
+  setText($('lcdTime'), t ? `${fmt(audio.currentTime || 0)} / ${fmt(t.sec)}` : '0:00 / 0:00');
   if (t) {
-    $('lcdTitle').textContent = t.title;
-    $('lcdArtist').textContent = t.artist || '알 수 없는 가수';
+    setText($('lcdTitle'), t.title);
+    setText($('lcdArtist'), t.artist || '알 수 없는 가수');
+  } else if (deck.loaded) {
+    setText($('lcdTitle'), tape.title);
+    setText($('lcdArtist'), `${deck.side}면 · ${sideIds(deck.side).length}곡 · PLAY를 누르세요`);
+  } else if (tapeHasTracks()) {
+    setText($('lcdTitle'), '데크가 비어 있습니다');
+    setText($('lcdArtist'), '선반의 테이프를 누르면 데크에 넣습니다');
   }
+  Reels.setProgress(p);
 }
 
 /* ===== 시작 ===== */
@@ -562,14 +1288,11 @@ function checkEnvironment() {
   return null;
 }
 
-const problem = checkEnvironment();
-if (problem) {
-  $('notice').textContent = problem;
-  $('notice').hidden = false;
-  $('main').hidden = true;
-  $('actions').hidden = true;
-} else {
+function bindEvents() {
   $('openFolder').addEventListener('click', openFolder);
+  $('openLibrary').addEventListener('click', () => { renderLibrary(); $('libraryDrawer').showModal(); });
+  $('closeLibrary').addEventListener('click', () => $('libraryDrawer').close());
+  $('libraryDrawer').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
   $('fileInput').addEventListener('change', (e) => {
     const files = [...e.target.files].filter((f) => AUDIO_EXT.test(f.name));
     e.target.value = '';
@@ -582,12 +1305,39 @@ if (problem) {
   $('keyStop').addEventListener('click', pressStop);
   $('keyRew').addEventListener('click', () => step(-1));
   $('keyFf').addEventListener('click', () => step(1));
-  for (const ol of [$('sideA'), $('sideB'), $('libList')]) {
-    ol.addEventListener('click', (e) => {
-      const btn = e.target.closest('.track');
-      if (btn && !btn.disabled) playFrom(ol.dataset.src, btn.dataset.id);
+  $('flipBtn').addEventListener('click', () => runDeckAction(flipSide));
+  $('volume').addEventListener('input', (e) => Engine.setVolume(e.target.value / 10));
+  Engine.setVolume($('volume').value / 10);
+  for (const side of ['A', 'B']) $('tab' + side).addEventListener('click', () => { jcardSide = side; render(); });
+  $('jcardList').addEventListener('click', (e) => {
+    const row = e.target.closest('button.track');
+    if (row && !row.classList.contains('is-broken')) pickTrack(jcardSide, row.dataset.id);
+  });
+  // HISS·WOW는 M4에서 소리와 연결한다(지금은 LED만)
+  for (const id of ['hissToggle', 'wowToggle']) {
+    $(id).addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      btn.setAttribute('aria-pressed', String(btn.getAttribute('aria-pressed') !== 'true'));
     });
   }
+}
+
+const problem = checkEnvironment();
+if (problem) {
+  $('notice').textContent = problem;
+  $('notice').hidden = false;
+  $('main').hidden = true;
+  $('actions').hidden = true;
+} else {
+  bindEvents();
+  try {
+    buildImageDeck(await loadAssets());
+  } catch (err) {
+    console.warn('실사 이미지를 불러오지 못해 CSS 데크로 그립니다:', err.message);
+    buildCssDeck();
+    showMessage('실사 이미지를 불러오지 못해 기본 데크로 표시합니다.');
+  }
+  render();
   if (!window.jsmediatags) showMessage('태그 읽기 도구를 불러오지 못해 파일 이름으로 표시합니다.');
 }
 </script>
