@@ -259,13 +259,17 @@ button.track { cursor: pointer; }
 .spine {
   width: 64px; height: 260px; border: none; border-radius: 8px 8px 2px 2px; padding: 12px 0;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  background: var(--tape-color, var(--accent)); color: var(--ink); cursor: pointer;
+  background: var(--tape-color, var(--accent)); color: var(--tape-ink, var(--ink)); cursor: pointer;
   transition: transform 0.2s ease; box-shadow: inset -6px 0 0 rgba(0, 0, 0, 0.12);
 }
 .spine:hover, .spine:focus-visible { transform: translateY(-8px); }
 .spine.in-deck { transform: translateY(-18px); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
 .spine-len { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
 .spine-title { writing-mode: vertical-rl; flex: 1; min-height: 0; line-height: 1; overflow: hidden; white-space: nowrap; }
+.spine-ai {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--bg); color: var(--ai); flex: none;
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-size: 11px; display: flex; align-items: center; justify-content: center;
+}
 .spine-title.hand-ko { font-size: 26px; }
 .spine-title.hand-en { font-size: 18px; }
 
@@ -288,6 +292,67 @@ button.track { cursor: pointer; }
 .drawer[open] { display: flex; flex-direction: column; gap: 16px; }
 .drawer::backdrop { background: rgba(0, 0, 0, 0.55); }
 .drawer .lib-list { overflow-y: auto; flex: 1; margin: 0 -8px; }
+.root-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.root-item { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.root-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.root-access { color: var(--muted); font-size: 12px; }
+.btn-small { height: 32px; padding: 0 12px; font-size: 12px; }
+
+/* J카드 머리 */
+.jcard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.jcard .btn { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, var(--paper)); }
+
+/* 테이프 편집기 */
+.editor {
+  width: min(1180px, calc(100vw - 32px)); height: min(820px, calc(100vh - 32px)); padding: 24px; border-radius: 22px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--line);
+}
+.editor[open] { display: flex; flex-direction: column; gap: 16px; }
+.editor::backdrop { background: rgba(0, 0, 0, 0.6); }
+.editor-meta { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-end; }
+.ed-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); border: none; margin: 0; padding: 0; }
+.ed-field input, .ed-field select {
+  height: 44px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text);
+  padding: 0 12px; font: inherit; font-size: 15px;
+}
+.ed-title { flex: 1 1 280px; }
+.ed-title input { font-family: 'Nanum Pen Script', cursive; font-size: 24px; color: var(--paper); }
+.ed-colors { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+.ed-colors legend { margin-bottom: 6px; }
+.swatch { appearance: none; width: 36px; height: 36px; margin: 0; border-radius: 50%; border: 2px solid var(--line-strong); cursor: pointer; }
+.swatch:checked { outline: 2px solid var(--lcd); outline-offset: 2px; }
+.editor-body { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ed-col { min-height: 0; display: flex; flex-direction: column; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.ed-col h3 { margin: 0; font-family: 'Archivo Narrow', sans-serif; font-size: 13px; letter-spacing: 0.2em; color: var(--muted); display: flex; justify-content: space-between; }
+.ed-cap { font-family: 'IBM Plex Mono', monospace; letter-spacing: 0; color: var(--text); }
+.ed-cap.is-over, .ed-warn { color: var(--accent); }
+.ed-bar { margin: 0; background: var(--line); }
+.ed-bar div { background: var(--lcd); }
+.ed-bar.is-over div { background: var(--accent); }
+.ed-col input[type="search"] { height: 40px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--text); padding: 0 12px; font: inherit; }
+.ed-list { list-style: none; margin: 0; padding: 0 0 24px; flex: 1; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; border-radius: 10px; }
+.ed-list.is-drop-end { box-shadow: inset 0 -3px 0 var(--lcd); }
+.ed-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; font-size: 13px; cursor: grab; }
+.ed-row:hover { background: var(--panel); }
+.ed-row.is-drop-before { box-shadow: inset 0 3px 0 var(--lcd); }
+.ed-row.is-used, .ed-row.is-bad { opacity: 0.45; }
+.ed-row .n, .ed-row .d { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
+.ed-row .t { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ed-row .a { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ed-btns { display: flex; gap: 4px; }
+.ed-btns button {
+  min-width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--panel);
+  color: var(--text); font-size: 12px; cursor: pointer;
+}
+.ed-btns button:disabled { opacity: 0.35; cursor: default; }
+.ed-hint { margin: 0; font-size: 12px; color: var(--muted); }
+.editor-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ed-warn { flex: 1; margin: 0; font-size: 13px; min-width: 200px; }
+.btn-primary { background: var(--lcd); color: var(--ink); border-color: var(--lcd); font-weight: 700; }
+.btn-primary:disabled { opacity: 0.4; }
+.btn-danger { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+.deck-well.is-drop-target { box-shadow: inset 0 0 0 3px var(--accent); }
+@media (max-width: 900px) { .editor-body { grid-template-columns: 1fr; overflow-y: auto; } .ed-list { max-height: 260px; } }
 
 /* 설정 창 */
 .settings {
@@ -304,6 +369,11 @@ button.track { cursor: pointer; }
 .setting-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; }
 .setting-check input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--lcd); }
 .settings small { display: block; font-size: 12px; color: var(--muted); }
+.setting-radio { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.setting-radio legend { margin-bottom: 6px; font-size: 14px; }
+.setting-radio label { display: grid; grid-template-columns: 18px 1fr; column-gap: 10px; cursor: pointer; }
+.setting-radio input { margin: 3px 0 0; accent-color: var(--lcd); }
+.setting-radio small { grid-column: 2; }
 
 @media (prefers-reduced-motion: reduce) {
   .key, .spine { transition: none; }
@@ -375,9 +445,12 @@ button.track { cursor: pointer; }
       </section>
 
       <section class="panel-side jcard" aria-label="J카드 곡 목록">
-        <div>
-          <div class="jcard-kicker" id="jcardKicker">J-CARD · C90</div>
-          <h2 class="jcard-title" id="jcardTitle">빈 테이프</h2>
+        <div class="jcard-head">
+          <div>
+            <div class="jcard-kicker" id="jcardKicker">J-CARD · C90</div>
+            <h2 class="jcard-title" id="jcardTitle">빈 테이프</h2>
+          </div>
+          <button type="button" class="btn btn-small jcard-edit" id="editTape" aria-label="이 테이프 편집" hidden>편집</button>
         </div>
         <div class="side-tabs" role="tablist" aria-label="테이프 면">
           <button type="button" role="tab" id="tabA" aria-selected="true" aria-controls="jcardList">SIDE A</button>
@@ -395,7 +468,7 @@ button.track { cursor: pointer; }
       <section class="panel panel-wide shelf-panel" aria-label="테이프 선반">
         <div class="panel-head">
           <div><h2 style="display:inline">테이프 선반</h2><span class="count" id="shelfCount"></span></div>
-          <button type="button" class="btn btn-dashed" disabled>+ 새 테이프</button>
+          <button type="button" class="btn btn-dashed" id="newTape">+ 새 테이프</button>
         </div>
         <div class="shelf-scroll">
           <div class="shelf" id="shelf"><span class="shelf-empty">폴더를 열면 첫 테이프가 여기에 꽂힙니다</span></div>
@@ -432,7 +505,55 @@ button.track { cursor: pointer; }
     </label>
     <span class="brand-sub">파일·폴더를 창에 끌어다 놓아도 됩니다</span>
   </div>
+  <ul class="root-list" id="rootList" aria-label="불러온 폴더"></ul>
   <ol class="tracks lib-list" id="libList"></ol>
+</dialog>
+
+<dialog class="editor" id="tapeEditor" aria-labelledby="editorTitle">
+  <div class="panel-head">
+    <h2 id="editorTitle">새 테이프</h2>
+    <button type="button" class="btn btn-round" id="edClose" aria-label="편집 닫기">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="editor-meta">
+    <label class="ed-field ed-title">라벨 제목
+      <input type="text" id="edTitle" maxlength="30" placeholder="손글씨 라벨 제목(30자 이내)">
+    </label>
+    <label class="ed-field">길이
+      <select id="edLength">
+        <option value="C46">C46 · 면당 23분</option>
+        <option value="C60">C60 · 면당 30분</option>
+        <option value="C90">C90 · 면당 45분</option>
+      </select>
+    </label>
+    <fieldset class="ed-field ed-colors" id="edColors"><legend>색</legend></fieldset>
+  </div>
+  <div class="editor-body">
+    <section class="ed-col ed-lib" aria-labelledby="edLibTitle">
+      <h3 id="edLibTitle">라이브러리</h3>
+      <input type="search" id="edSearch" placeholder="제목·가수·앨범 검색" aria-label="라이브러리 검색">
+      <ol class="ed-list" id="edLib" data-zone="lib"></ol>
+      <p class="ed-hint" id="edLibHint"></p>
+    </section>
+    <section class="ed-col" aria-labelledby="edTitleA">
+      <h3 id="edTitleA">SIDE A <span class="ed-cap" id="edCapA"></span></h3>
+      <div class="cap-bar ed-bar"><div id="edBarA"></div></div>
+      <ol class="ed-list ed-side" id="edSideA" data-zone="A"></ol>
+    </section>
+    <section class="ed-col" aria-labelledby="edTitleB">
+      <h3 id="edTitleB">SIDE B <span class="ed-cap" id="edCapB"></span></h3>
+      <div class="cap-bar ed-bar"><div id="edBarB"></div></div>
+      <ol class="ed-list ed-side" id="edSideB" data-zone="B"></ol>
+    </section>
+  </div>
+  <div class="editor-foot">
+    <button type="button" class="btn btn-danger" id="edDelete">테이프 지우기</button>
+    <p class="ed-warn" id="edWarn" role="status" aria-live="polite"></p>
+    <button type="button" class="btn" id="edSplit">반으로 나누기</button>
+    <button type="button" class="btn" id="edCancel">취소</button>
+    <button type="button" class="btn btn-primary" id="edSave">선반에 꽂기</button>
+  </div>
 </dialog>
 
 <dialog class="settings" id="settingsDialog" aria-labelledby="settingsTitle">
@@ -458,6 +579,18 @@ button.track { cursor: pointer; }
       <input type="checkbox" id="toneToggle" checked>
       <span>톤 색감 <small>고음을 살짝 깎고 약하게 포화시켜 테이프 느낌을 냅니다</small></span>
     </label>
+  </section>
+  <section class="setting-group" aria-labelledby="deckSettingTitle">
+    <h3 id="deckSettingTitle">테이프 데크</h3>
+    <label class="setting-check">
+      <input type="checkbox" id="autoReverse">
+      <span>오토 리버스 <small>A면이 끝나면 뒤집어서 B면을 이어 재생합니다</small></span>
+    </label>
+    <fieldset class="setting-radio">
+      <legend>릴·카운터의 면 길이 기준</legend>
+      <label><input type="radio" name="sideBasis" value="songs"> 곡 길이 합계 <small>면의 마지막 곡이 끝나면 오른쪽 릴이 가득 찹니다</small></label>
+      <label><input type="radio" name="sideBasis" value="tape"> 실제 테이프 길이 <small>C60이면 면당 30분. 곡이 끝나도 테이프가 남습니다</small></label>
+    </fieldset>
   </section>
 </dialog>
 
@@ -634,14 +767,130 @@ function buildCssDeck() {
 }
 
 /* ===== Store: IndexedDB 읽기·쓰기 (roots, tracks, art, tapes, settings) ===== */
+const DB_NAME = 'awesome-mix';
+const DB_VERSION = 1;
+const STORES = ['roots', 'tracks', 'art', 'tapes', 'settings'];
+
+// 저장에 실패해도(사생활 보호 창 등) 앱은 그대로 동작한다
+const Store = {
+  db: null,
+  async open() {
+    try {
+      this.db = await new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = () => {
+          for (const name of STORES) {
+            if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (err) {
+      console.warn('저장소를 열지 못해 이번에는 저장하지 않습니다:', err.message);
+    }
+  },
+  run(store, mode, fn) {
+    if (!this.db) return Promise.resolve(null);
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(store, mode);
+      const req = fn(tx.objectStore(store));
+      tx.oncomplete = () => resolve(req?.result ?? null);
+      tx.onerror = () => reject(tx.error);
+    }).catch((err) => { console.warn(`저장소(${store}) 작업 실패:`, err.message); return null; });
+  },
+  getAll(store) { return this.run(store, 'readonly', (s) => s.getAll()).then((rows) => rows || []); },
+  put(store, value) { return this.run(store, 'readwrite', (s) => s.put(value)); },
+  putMany(store, values) {
+    return values.length ? this.run(store, 'readwrite', (s) => { values.forEach((v) => s.put(v)); }) : Promise.resolve();
+  },
+  delete(store, id) { return this.run(store, 'readwrite', (s) => s.delete(id)); },
+};
+
+// 설정은 바뀔 때마다 조금 모았다가 저장한다
+const SETTINGS_ID = 'app';
+const SETTINGS_SAVE_MS = 300;
+const SETTINGS_BACKUP_KEY = 'awesome-mix:settings'; // IndexedDB 저장이 끝나기 전에 창이 닫혀도 남도록 함께 적는 사본
+let settingsTimer = 0;
+let lastSettingsWrite = 0;
+const settingsSnapshot = () => ({ engine: { ...Engine.settings }, deck: { ...deckSettings }, at: Date.now() });
+const writeSettings = () => {
+  settingsTimer = 0;
+  lastSettingsWrite = Date.now();
+  return Store.put('settings', { id: SETTINGS_ID, ...settingsSnapshot() });
+};
+// 처음 바뀐 값은 바로 쓰고, 슬라이더를 끄는 동안처럼 이어지는 변경은 모아서 쓴다
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_BACKUP_KEY, JSON.stringify(settingsSnapshot())); } catch { /* 사본은 없어도 된다 */ }
+  clearTimeout(settingsTimer);
+  const wait = SETTINGS_SAVE_MS - (Date.now() - lastSettingsWrite);
+  if (wait <= 0) writeSettings();
+  else settingsTimer = setTimeout(writeSettings, wait);
+}
+// 창을 떠날 때 모아 둔 설정 저장이 남아 있으면 바로 쓴다
+window.addEventListener('pagehide', () => { if (settingsTimer) { clearTimeout(settingsTimer); writeSettings(); } });
+
+// 지난 방문의 설정·폴더·곡·아트·테이프를 불러온다
+async function restore() {
+  const [settings, rootRows, artRows, trackRows, tapeRows] = await Promise.all(
+    ['settings', 'roots', 'art', 'tracks', 'tapes'].map((s) => Store.getAll(s)));
+  let saved = settings.find((s) => s.id === SETTINGS_ID);
+  try {
+    const backup = JSON.parse(localStorage.getItem(SETTINGS_BACKUP_KEY));
+    if (backup && (backup.at || 0) > (saved?.at || 0)) {
+      saved = backup; // 더 새것을 쓰고, IndexedDB에도 옮겨 적는다
+      Store.put('settings', { ...backup, id: SETTINGS_ID });
+    }
+  } catch { /* 사본이 없거나 깨졌으면 IndexedDB 값만 쓴다 */ }
+  if (saved?.engine) Object.assign(Engine.settings, saved.engine);
+  if (saved?.deck) Object.assign(deckSettings, saved.deck);
+  for (const r of rootRows) roots.set(r.id, { ...r, access: 'prompt' });
+  for (const a of artRows) artUrls.set(a.id, URL.createObjectURL(a.blob));
+  for (const t of trackRows) {
+    library.set(t.id, { ...t, temp: false, file: null, art: artUrls.get(t.artKey) || null, ready: true, missing: false });
+    pathIndex.set(pathKey(t.rootId, t.path), t.id);
+  }
+  // 저장되지 않은 임시 곡은 테이프에서 뺀다. 그래서 비게 된 테이프는 버린다.
+  for (const tape of tapeRows.sort((a, b) => a.order - b.order)) {
+    const had = hasTracks(tape);
+    tape.sideA = tape.sideA.filter((id) => library.has(id));
+    tape.sideB = tape.sideB.filter((id) => library.has(id));
+    if (had && !hasTracks(tape)) { Store.delete('tapes', tape.id); continue; }
+    shelfTapes.push(tape);
+  }
+  sortLibrary();
+  applyResumeBackup();
+  viewTapeId = shelfTapes[0]?.id || null;
+  await Promise.all([...roots.values()].map(queryAccess));
+  return { tapes: shelfTapes.length, needsAccess: [...roots.values()].some((r) => r.access !== 'granted') };
+}
 
 /* ===== Library: 폴더 스캔, 태그·길이 읽기, 권한 재요청 ===== */
 const AUDIO_EXT = /\.(mp3|m4a|ogg|flac|wav)$/i;
-const library = new Map();   // id → 곡
-const libraryKeys = new Set(); // 같은 파일을 두 번 넣지 않게
+const ART_SIZE = 256;          // 앨범 아트는 256px로 줄여 저장한다
+const library = new Map();     // 곡 id → 곡. 폴더에서 온 곡의 id는 "폴더id:상대 경로"라 다시 열어도 같다
+const roots = new Map();       // 폴더(또는 끌어다 놓은 파일) id → { id, name, kind, handle, access }
+const artUrls = new Map();     // artKey → 앨범 아트 주소
+const pathIndex = new Map();   // "폴더id:상대 경로" → 곡 id. 다시 찾기로 경로가 바뀌어도 곡 id(테이프의 연결)는 그대로 둔다
 let libraryOrder = [];
-let nextId = 1;
+const pathKey = (rootId, path) => `${rootId}:${path}`;
 const scan = { total: 0, done: 0 };
+
+// 재생할 수 있는 곡: 읽을 수 있고, 파일이 사라지지 않았고, 임시 곡이면 파일이 아직 있다
+const isPlayable = (t) => !!t && !t.broken && !t.missing && (!t.temp || !!t.file);
+
+// IndexedDB에 남길 곡 정보(파일 자체와 화면용 주소는 빼고)
+const trackRecord = (t) => ({
+  id: t.id, rootId: t.rootId, path: t.path, size: t.size, mtime: t.mtime, title: t.title, artist: t.artist,
+  album: t.album, year: t.year, genre: t.genre, sec: t.sec, artKey: t.artKey, broken: t.broken, brokenReason: t.brokenReason,
+});
+
+function sortLibrary() {
+  const sortKey = (t) => (roots.get(t.rootId)?.name || '') + '/' + t.path;
+  libraryOrder = [...library.values()]
+    .sort((a, b) => sortKey(a).localeCompare(sortKey(b), undefined, { numeric: true }))
+    .map((t) => t.id);
+}
 
 // 태그가 없을 때 "가수 - 제목.mp3"에서 읽는다
 function parseFileName(name) {
@@ -723,9 +972,31 @@ function fixLegacyText(text) {
   return best;
 }
 
-function artUrl(picture) {
-  if (!picture?.data?.length) return null;
-  return URL.createObjectURL(new Blob([new Uint8Array(picture.data)], { type: picture.format || 'image/jpeg' }));
+// 앨범 아트를 256px로 줄인다
+async function shrinkArt(blob) {
+  try {
+    const bmp = await createImageBitmap(blob);
+    const scale = Math.min(1, ART_SIZE / Math.max(bmp.width, bmp.height));
+    const canvas = new OffscreenCanvas(Math.round(bmp.width * scale), Math.round(bmp.height * scale));
+    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    return await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
+  } catch {
+    return null;
+  }
+}
+
+// 같은 앨범은 아트 하나를 함께 쓴다
+async function storeArt(track, picture) {
+  if (!picture?.data?.length) return;
+  const artKey = track.album ? `${track.artist}|${track.album}` : track.id;
+  if (!artUrls.has(artKey)) {
+    const blob = await shrinkArt(new Blob([new Uint8Array(picture.data)], { type: picture.format || 'image/jpeg' }));
+    if (!blob) return;
+    artUrls.set(artKey, URL.createObjectURL(blob));
+    if (!track.temp) Store.put('art', { id: artKey, blob });
+  }
+  track.artKey = artKey;
+  track.art = artUrls.get(artKey);
 }
 
 // 재생하지 못한 m4a가 ALAC(애플 무손실)인지 본다. 크롬·엣지는 ALAC를 재생하지 못한다.
@@ -746,11 +1017,11 @@ async function readTrackInfo(track) {
     track.album = fixLegacyText(tags.album || '');
     track.year = parseInt(tags.year, 10) || null;
     track.genre = fixLegacyText(tags.genre || '');
-    track.art = artUrl(tags.picture);
+    await storeArt(track, tags.picture);
   }
   track.sec = sec;
   track.broken = sec === 0;
-  if (track.broken && await isAlac(track.file)) track.brokenReason = 'ALAC';
+  track.brokenReason = track.broken && await isAlac(track.file) ? 'ALAC' : '';
   track.ready = true;
 }
 
@@ -760,39 +1031,185 @@ async function runPool(items, limit, fn) {
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
 }
 
-// 곡을 라이브러리에 바로 넣고(파일 이름으로 표시), 태그·길이는 4개씩 뒤에서 채운다
-async function addFiles(entries) {
-  const added = [];
-  for (const { file, path, handle } of entries) {
-    const key = path + '|' + file.size + '|' + file.lastModified;
-    if (libraryKeys.has(key)) continue;
-    libraryKeys.add(key);
-    const track = {
-      id: 't' + String(nextId++).padStart(3, '0'), key, path, file, handle: handle || null,
-      ...parseFileName(file.name), album: '', year: null, genre: '', sec: 0, art: null, ready: false, broken: false, brokenReason: '',
-    };
-    library.set(track.id, track);
-    added.push(track);
+// 곡을 라이브러리에 바로 넣고(파일 이름으로 표시), 태그·길이는 4개씩 뒤에서 채운다.
+// 경로·크기·수정 시각이 저장된 것과 같으면 다시 읽지 않는다(태그 캐시, F-05).
+// root가 없으면 핸들 없이 들어온 "임시 곡"이라 저장하지 않는다.
+async function addFiles(entries, root = null) {
+  const toRead = [];
+  for (const { file, path } of entries) {
+    const id = root ? (pathIndex.get(pathKey(root.id, path)) || pathKey(root.id, path)) : `tmp:${path}|${file.size}|${file.lastModified}`;
+    if (root) pathIndex.set(pathKey(root.id, path), id);
+    let track = library.get(id);
+    if (track) {
+      track.file = file;
+      track.missing = false;
+      if (track.ready && track.size === file.size && track.mtime === file.lastModified) continue;
+    } else {
+      track = {
+        id, rootId: root?.id || null, path, temp: !root, ...parseFileName(file.name),
+        album: '', year: null, genre: '', sec: 0, artKey: null, art: null,
+        ready: false, broken: false, brokenReason: '', missing: false,
+      };
+      library.set(id, track);
+    }
+    Object.assign(track, { file, size: file.size, mtime: file.lastModified });
+    toRead.push(track);
   }
-  if (!added.length) { showMessage('새로 더할 음악 파일이 없습니다.'); return; }
-  libraryOrder = [...library.keys()].sort((a, b) =>
-    library.get(a).path.localeCompare(library.get(b).path, undefined, { numeric: true }));
-  scan.total += added.length;
+  sortLibrary();
   render();
-  await runPool(added, 4, async (track) => {
+  if (!toRead.length) return;
+  scan.total += toRead.length;
+  const records = [];
+  await runPool(toRead, 4, async (track) => {
     await readTrackInfo(track);
     scan.done++;
+    if (!track.temp) records.push(trackRecord(track));
     render();
   });
-  if (scan.done === scan.total) {
-    const broken = [...library.values()].filter((t) => t.broken);
-    const alac = broken.filter((t) => t.brokenReason === 'ALAC').length;
-    const other = broken.length - alac;
-    showMessage(`녹음 완료 · ${library.size}곡`
-      + (alac ? ` · ALAC(애플 무손실) ${alac}곡은 크롬·엣지에서 재생할 수 없어 건너뜁니다(FLAC로 바꾸면 재생됩니다)` : '')
-      + (other ? ` · 읽을 수 없는 파일 ${other}개` : ''));
-    if (!tapeHasTracks()) buildDefaultTape();
+  await Store.putMany('tracks', records);
+}
+
+// 스캔이 모두 끝나면 결과를 알리고, 선반이 비어 있으면 기본 테이프를 만든다
+function finishScan() {
+  if (scan.done < scan.total) return;
+  const all = [...library.values()];
+  const alac = all.filter((t) => t.broken && t.brokenReason === 'ALAC').length;
+  const unreadable = all.filter((t) => t.broken && t.brokenReason !== 'ALAC').length;
+  const missing = all.filter((t) => t.missing).length;
+  const temp = all.filter((t) => t.temp).length;
+  showMessage(`녹음 완료 · ${library.size}곡`
+    + (alac ? ` · ALAC(애플 무손실) ${alac}곡은 크롬·엣지에서 재생할 수 없어 건너뜁니다(FLAC로 바꾸면 재생됩니다)` : '')
+    + (unreadable ? ` · 읽을 수 없는 파일 ${unreadable}개` : '')
+    + (missing ? ` · 찾을 수 없는 파일 ${missing}개` : '')
+    + (temp ? ` · 파일 고르기로 넣은 ${temp}곡은 임시 곡이라 새로 고침하면 사라집니다` : ''));
+  if (!shelfTapes.length) buildDefaultTape();
+  render();
+}
+
+// 폴더 핸들을 저장한다. 이미 연 폴더면 같은 id를 쓴다.
+async function addRoot(handle) {
+  for (const root of roots.values()) {
+    if (root.kind === handle.kind && await root.handle.isSameEntry(handle)) {
+      root.handle = handle;
+      root.access = 'granted';
+      return root;
+    }
   }
+  const root = { id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: handle.name, kind: handle.kind, handle, access: 'granted' };
+  roots.set(root.id, root);
+  await Store.put('roots', { id: root.id, name: root.name, kind: root.kind, handle });
+  return root;
+}
+
+// 폴더(또는 파일) 하나를 훑는다. 전에 있었는데 이번에 없는 곡은 "찾을 수 없음"으로 표시한다.
+async function scanRoot(root) {
+  const entries = [];
+  try {
+    if (root.kind === 'directory') {
+      for await (const { handle, path } of walkDir(root.handle, '')) entries.push({ file: await handle.getFile(), path });
+    } else if (AUDIO_EXT.test(root.handle.name)) {
+      entries.push({ file: await root.handle.getFile(), path: root.handle.name });
+    }
+  } catch (err) {
+    console.warn(`${root.name}을(를) 읽지 못했습니다:`, err.message);
+  }
+  const seen = new Set(entries.map((e) => e.path));
+  for (const t of library.values()) if (t.rootId === root.id && !seen.has(t.path)) { t.missing = true; t.file = null; }
+  await addFiles(entries, root);
+}
+
+// 같은 파일이 곡 두 개로 들어온 경우 from을 지우고 to로 합친다(테이프의 연결도 옮긴다)
+function mergeTrack(fromId, toId) {
+  library.delete(fromId);
+  Store.delete('tracks', fromId);
+  for (const tape of shelfTapes) {
+    let changed = false;
+    for (const side of ['sideA', 'sideB']) {
+      const i = tape[side].indexOf(fromId);
+      if (i < 0) continue;
+      if (tape.sideA.includes(toId) || tape.sideB.includes(toId)) tape[side].splice(i, 1);
+      else tape[side][i] = toId;
+      changed = true;
+    }
+    if (changed) saveTape(tape);
+  }
+  sortLibrary();
+}
+
+// 다시 찾기(F-44): 폴더를 다시 골라 사라진 곡을 상대 경로로, 없으면 "파일 이름+크기"로 맞춘다.
+// 옮긴 폴더를 고르면 그 폴더가 이 폴더의 새 자리가 된다.
+async function relocateRoot(root) {
+  let dir;
+  try {
+    dir = await window.showDirectoryPicker({ id: 'awesome-mix', mode: 'read' });
+  } catch (err) {
+    if (err.name !== 'AbortError') showMessage('폴더를 열 수 없습니다: ' + err.message);
+    return;
+  }
+  showMessage(`${root.name} 폴더의 곡을 다시 찾는 중…`);
+  const entries = [];
+  for await (const { handle, path } of walkDir(dir, '')) entries.push({ file: await handle.getFile(), path });
+  const byPath = new Map(entries.map((e) => [e.path, e]));
+  const byNameSize = new Map(entries.map((e) => [`${e.file.name}|${e.file.size}`, e]));
+  const tracks = [...library.values()].filter((t) => t.rootId === root.id);
+  const lost = tracks.filter((t) => t.missing);
+  for (const t of lost) {
+    const found = byPath.get(t.path) || byNameSize.get(`${t.path.split('/').pop()}|${t.size}`);
+    if (!found) continue;
+    // 그 사이 다시 훑기로 새 자리의 파일이 다른 곡으로 등록됐으면 원래 곡으로 합친다
+    const dupId = pathIndex.get(pathKey(root.id, found.path));
+    if (dupId && dupId !== t.id) mergeTrack(dupId, t.id);
+    pathIndex.delete(pathKey(root.id, t.path));
+    t.path = found.path;
+    pathIndex.set(pathKey(root.id, t.path), t.id);
+  }
+  const wasMissing = lost.length;
+  Object.assign(root, { handle: dir, name: dir.name, access: 'granted' });
+  await Store.put('roots', { id: root.id, name: root.name, kind: root.kind, handle: dir });
+  await Store.putMany('tracks', lost.map(trackRecord));
+  await scanRoot(root);
+  const stillMissing = lost.filter((t) => t.missing).length;
+  finishScan();
+  showMessage(`다시 찾기: 사라졌던 ${wasMissing}곡 중 ${wasMissing - stillMissing}곡을 찾았습니다.`
+    + (stillMissing ? ` ${stillMissing}곡은 여전히 찾을 수 없습니다.` : ''));
+}
+
+async function queryAccess(root) {
+  try { root.access = await root.handle.queryPermission({ mode: 'read' }); } catch { root.access = 'denied'; }
+  return root.access;
+}
+
+// 폴더 읽기 권한을 묻는다. 사용자가 누른 직후(클릭 안)에 불러야 브라우저가 창을 띄운다.
+// 권한을 받으면 뒤에서 폴더를 다시 훑어 새 곡·사라진 곡을 반영한다.
+async function requestAccess(rootIds) {
+  for (const id of rootIds) {
+    const root = roots.get(id);
+    if (!root || root.access === 'granted') continue;
+    try { root.access = await root.handle.requestPermission({ mode: 'read' }); } catch { root.access = 'denied'; }
+    if (root.access === 'granted') scanRoot(root).then(finishScan);
+  }
+  render();
+  return rootIds.every((id) => roots.get(id)?.access === 'granted');
+}
+
+// 저장된 경로를 따라가 파일을 찾는다
+async function resolveFile(track) {
+  if (track.file || track.temp) return !!track.file;
+  const root = roots.get(track.rootId);
+  if (!root || root.access !== 'granted') return false;
+  try {
+    let handle = root.handle;
+    if (root.kind === 'directory') {
+      const parts = track.path.split('/');
+      for (const part of parts.slice(0, -1)) handle = await handle.getDirectoryHandle(part);
+      handle = await handle.getFileHandle(parts.at(-1));
+    }
+    track.file = await handle.getFile();
+    track.missing = false;
+  } catch {
+    track.missing = true;
+  }
+  return !!track.file;
 }
 
 async function openFolder() {
@@ -804,36 +1221,33 @@ async function openFolder() {
     return;
   }
   showMessage('폴더를 살펴보는 중…');
-  const entries = [];
-  for await (const { handle, path } of walkDir(dir, dir.name + '/')) {
-    entries.push({ file: await handle.getFile(), path, handle });
-  }
-  await addFiles(entries);
+  await scanRoot(await addRoot(dir));
+  finishScan();
 }
 
 // 끌어다 놓기: 핸들 요청은 drop 이벤트 안에서 한꺼번에 해야 한다
 async function onDrop(e) {
   e.preventDefault();
   document.body.classList.remove('is-dragging');
+  if (!e.dataTransfer.types.includes('Files')) return; // 선반 테이프를 끌어다 놓은 경우 등
   const items = [...e.dataTransfer.items].filter((item) => item.kind === 'file');
   const handles = items.map((item) => item.getAsFileSystemHandle
     ? item.getAsFileSystemHandle().catch(() => null) : Promise.resolve(null));
   const plainFiles = items.map((item) => item.getAsFile());
-  const entries = [];
+  const temps = [];
+  let count = 0;
   for (let k = 0; k < items.length; k++) {
     const handle = await handles[k];
-    if (handle?.kind === 'directory') {
-      for await (const { handle: h, path } of walkDir(handle, handle.name + '/')) {
-        entries.push({ file: await h.getFile(), path, handle: h });
-      }
-    } else if (handle?.kind === 'file') {
-      if (AUDIO_EXT.test(handle.name)) entries.push({ file: await handle.getFile(), path: handle.name, handle });
-    } else if (plainFiles[k] && AUDIO_EXT.test(plainFiles[k].name)) {
-      entries.push({ file: plainFiles[k], path: plainFiles[k].name, handle: null });
+    if (handle && (handle.kind === 'directory' || AUDIO_EXT.test(handle.name))) {
+      await scanRoot(await addRoot(handle));
+      count++;
+    } else if (!handle && plainFiles[k] && AUDIO_EXT.test(plainFiles[k].name)) {
+      temps.push({ file: plainFiles[k], path: plainFiles[k].name });
     }
   }
-  if (!entries.length) { showMessage('음악 파일(mp3·m4a·ogg·flac·wav)을 놓아 주세요.'); return; }
-  await addFiles(entries);
+  if (!count && !temps.length) { showMessage('음악 파일(mp3·m4a·ogg·flac·wav)이나 폴더를 놓아 주세요.'); return; }
+  await addFiles(temps);
+  finishScan();
 }
 
 /* ===== Engine: AudioContext, 재생·이동, 히스·와우, 효과음 합성 ===== */
@@ -925,6 +1339,7 @@ const Engine = {
   set(patch) {
     Object.assign(this.settings, patch);
     this.apply();
+    saveSettings();
   },
   // 다이나믹 히스: 테이프가 헤드를 지날 때(재생 중)만 쉬 소리가 난다
   setRunning(on) {
@@ -1071,14 +1486,31 @@ const Sfx = {
 
 /* ===== Deck: 테이프 상태 머신, 면 전환, 넣기·꺼내기 ===== */
 const TAPE_SIDE_SEC = { C46: 23 * 60, C60: 30 * 60, C90: 45 * 60 };
-const tape = { title: 'Awesome Mix Vol. 1', length: 'C90', color: 'var(--accent)', sideA: [], sideB: [] };
-const deck = { state: 'STOP', loaded: false, lid: 'closed', busy: false, side: 'A', queue: [], index: 0, ended: false };
-let jcardSide = 'A'; // J카드에서 보고 있는 면
+const shelfTapes = []; // 선반에 꽂힌 테이프(선반 순서대로)
+const deck = { state: 'STOP', loaded: false, tapeId: null, lid: 'closed', busy: false, side: 'A', queue: [], index: 0, ended: false };
+// autoReverse: A면이 끝나면 뒤집어 B면을 이어 재생(F-15)
+// sideBasis: 릴·카운터의 면 길이 기준. songs = 곡 길이 합계, tape = 실제 테이프 길이(6-3)
+const deckSettings = { autoReverse: false, sideBasis: 'songs' };
+let viewTapeId = null; // 데크가 비었을 때 J카드에 보여 줄 테이프
+let jcardSide = 'A';   // J카드에서 보고 있는 면
 
-const tapeHasTracks = () => tape.sideA.length + tape.sideB.length > 0;
-const sideIds = (side) => (side === 'A' ? tape.sideA : tape.sideB);
-const sumSec = (ids) => ids.reduce((acc, id) => acc + library.get(id).sec, 0);
+const tapeById = (id) => shelfTapes.find((t) => t.id === id) || null;
+const deckTape = () => (deck.loaded ? tapeById(deck.tapeId) : null);
+const viewTape = () => deckTape() || tapeById(viewTapeId) || shelfTapes[0] || null;
+const hasTracks = (t) => !!t && t.sideA.length + t.sideB.length > 0;
+const sideIds = (side, t = deckTape()) => (t ? (side === 'A' ? t.sideA : t.sideB) : []);
+const sumSec = (ids) => ids.reduce((acc, id) => acc + (library.get(id)?.sec || 0), 0);
 const currentTrack = () => library.get(deck.queue[deck.index]);
+
+function newTape(fields) {
+  return {
+    id: 'tape-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    title: '새 테이프', length: 'C90', color: 'var(--accent)', sideA: [], sideB: [],
+    resume: null, made: 'manual', order: shelfTapes.reduce((m, t) => Math.max(m, t.order), -1) + 1, ...fields,
+  };
+}
+
+const saveTape = (t) => Store.put('tapes', { ...t });
 
 function shuffle(list) {
   for (let i = list.length - 1; i > 0; i--) {
@@ -1103,14 +1535,19 @@ function fillTapeRandomly(ids, sideSec) {
   return sides;
 }
 
-// 기본 테이프는 선반에만 꽂는다. 데크에는 사용자가 넣는다(시나리오 A).
+// 선반이 비어 있을 때만 기본 테이프를 만들어 선반에 꽂는다. 데크에는 사용자가 넣는다(시나리오 A).
 function buildDefaultTape() {
-  const playable = libraryOrder.filter((id) => !library.get(id).broken);
+  const playable = libraryOrder.filter((id) => isPlayable(library.get(id)));
+  const tape = newTape({ title: 'Awesome Mix Vol. 1', made: 'auto' });
   const { A, B } = fillTapeRandomly(playable, TAPE_SIDE_SEC[tape.length]);
   tape.sideA = A;
   tape.sideB = B;
+  if (!hasTracks(tape)) return;
+  shelfTapes.push(tape);
+  saveTape(tape);
+  viewTapeId = tape.id;
   jcardSide = 'A';
-  if (tapeHasTracks()) showMessage($('message').textContent + ' · 선반의 테이프를 눌러 데크에 넣으세요.');
+  showMessage($('message').textContent + ' · 선반의 테이프를 눌러 데크에 넣으세요.');
   render();
 }
 
@@ -1156,7 +1593,7 @@ function loadIndex(index) {
 
 // 지금 데크에 든 면의 id 곡부터(없으면 첫 곡부터) 재생한다
 function playFrom(id = null) {
-  deck.queue = [...sideIds(deck.side)];
+  deck.queue = sideIds(deck.side).filter((tid) => isPlayable(library.get(tid))); // 찾을 수 없는 곡은 건너뛴다
   if (!deck.queue.length) { showMessage(deck.side + '면이 비어 있습니다.'); return; }
   jcardSide = deck.side;
   loadIndex(id ? Math.max(0, deck.queue.indexOf(id)) : 0);
@@ -1167,7 +1604,7 @@ function pressPlay() {
   Sfx.play('play');
   if (deck.busy || wind || deck.state === 'PLAY') return;
   if (!deck.loaded) {
-    showMessage(tapeHasTracks() ? '먼저 선반의 테이프를 눌러 데크에 넣으세요.' : '먼저 폴더를 열어 테이프를 만들어 주세요.');
+    showMessage(shelfTapes.length ? '먼저 선반의 테이프를 눌러 데크에 넣으세요.' : '먼저 폴더를 열어 테이프를 만들어 주세요.');
     return;
   }
   if (!deck.queue.length) return playFrom();
@@ -1186,6 +1623,7 @@ function pressStop() {
   } else if (deck.state === 'PLAY') {
     Engine.pause();
     setState('STOP');
+    saveResume();
   } else if (deck.loaded) {
     runDeckAction(ejectTape);
   } else if (deck.lid === 'open') {
@@ -1193,12 +1631,24 @@ function pressStop() {
   }
 }
 
-// J카드에서 곡을 고르면, 다른 면이면 먼저 뒤집는다
+// J카드에서 곡을 고르면, 데크가 비었으면 그 테이프를 넣고, 다른 면이면 먼저 뒤집는다
 async function pickTrack(side, id) {
-  if (deck.busy) return;
-  if (!deck.loaded) { showMessage('먼저 선반의 테이프를 눌러 데크에 넣으세요.'); return; }
+  if (deck.busy || wind) return;
+  const tape = viewTape();
+  if (!tape) return;
+  if (deckTape()?.id !== tape.id) await loadTapeToDeck(tape.id);
+  if (!deck.loaded || deck.tapeId !== tape.id) return;
   if (side !== deck.side) await runDeckAction(flipSide);
   playFrom(id);
+}
+
+// 선반의 테이프를 데크에 넣는다. 다른 테이프가 들어 있으면 먼저 꺼낸다.
+function loadTapeToDeck(tapeId) {
+  return runDeckAction(async () => {
+    if (deck.loaded && deck.tapeId === tapeId) return;
+    if (deck.loaded) await ejectTape();
+    await insertTape(tapeId);
+  });
 }
 
 /* --- 덮개·넣기·꺼내기·뒤집기 연출(PRD 5-5). transform·opacity만 움직인다 --- */
@@ -1246,10 +1696,22 @@ async function closeLid() {
 }
 
 // 덮개 열림 → 카세트가 위에서 내려와 자리 잡음 → 덮개 닫힘
-async function insertTape() {
-  if (deck.loaded || !tapeHasTracks()) return;
+async function insertTape(tapeId) {
+  const tape = tapeById(tapeId);
+  if (deck.loaded || !hasTracks(tape)) return;
+  // 다시 방문했으면 여기서 폴더 읽기 권한을 묻는다(클릭 직후라야 창이 뜬다)
+  const ids = [...tape.sideA, ...tape.sideB];
+  const rootIds = [...new Set(ids.map((id) => library.get(id)?.rootId).filter(Boolean))];
+  if (!(await requestAccess(rootIds))) {
+    showMessage('폴더 읽기 권한이 없어 테이프를 넣지 못했습니다. 테이프를 다시 누르고 권한을 허락해 주세요.');
+    return;
+  }
+  await Promise.all(ids.map((id) => library.get(id)).filter(Boolean).map(resolveFile));
   await openLid();
   deck.loaded = true;
+  deck.tapeId = tape.id;
+  deck.side = tape.resume?.side || 'A'; // 테이프는 마지막에 듣던 면이 위로 온다
+  viewTapeId = tape.id;
   deck.queue = [];
   deck.index = 0;
   deck.ended = false;
@@ -1265,7 +1727,10 @@ async function insertTape() {
     await animateEl(cassette, [{ transform: OUT_OF_BAY }, { transform: 'none' }], CASSETTE_MOVE_MS, 'cubic-bezier(.2,.8,.3,1)');
   }
   await closeLid();
-  showMessage(`${tape.title} · ${deck.side}면을 넣었습니다. PLAY를 누르세요.`);
+  const resumed = restoreResume(tape);
+  const missing = ids.filter((id) => library.get(id)?.missing).length;
+  showMessage(`${tape.title} · ${deck.side}면을 넣었습니다. ` + (resumed ? resumed + '. ' : '') + 'PLAY를 누르세요.'
+    + (missing ? ` (찾을 수 없는 곡 ${missing}개는 건너뜁니다. 라이브러리에서 "다시 찾기"를 눌러 보세요)` : ''));
 }
 
 // 덮개 열림 → 카세트가 위로 빠져 선반으로 돌아감
@@ -1273,6 +1738,7 @@ async function ejectTape() {
   if (!deck.loaded) return;
   Engine.pause();
   setState('STOP');
+  saveResume(); // 꺼낼 때 듣던 자리를 테이프에 남긴다
   await openLid();
   const cassette = $('cassette');
   if (reduceMotion.matches) await animateEl(cassette, [{ opacity: 1 }, { opacity: 0 }], CASSETTE_MOVE_MS);
@@ -1282,6 +1748,8 @@ async function ejectTape() {
     cassette.style.opacity = '';
   }
   deck.loaded = false;
+  viewTapeId = deck.tapeId;
+  deck.tapeId = null;
   deck.queue = [];
   deck.ended = false;
   showMessage('테이프를 꺼냈습니다. 선반의 테이프를 누르면 다시 넣습니다.');
@@ -1311,6 +1779,7 @@ async function flipSide() {
     await animateEl(cassette, [{ transform: flipTransform(-90) }, { transform: 'none' }], FLIP_HALF_MS, 'ease-out');
   }
   await closeLid();
+  saveResume();
   showMessage(`${deck.side}면으로 뒤집었습니다.`);
 }
 
@@ -1356,12 +1825,70 @@ function seekBy(sec) {
   moveTo(Math.max(0, Math.min(total - 0.5, sidePosition() + sec)), deck.state === 'PLAY');
 }
 
+// 릴·카운터가 기준으로 삼는 면 길이. 실제 테이프 길이 기준이면 곡이 끝나도 테이프가 남는다.
+function sideSpan() {
+  const songs = sumSec(deck.queue);
+  const tape = deckTape();
+  return deckSettings.sideBasis === 'tape' && tape ? Math.max(songs, TAPE_SIDE_SEC[tape.length]) : songs;
+}
+
 // 면 전체에서 지난 비율(0~1)
 function sideProgress() {
   if (!deck.queue.length) return 0;
-  const total = wind ? wind.total : sumSec(deck.queue);
+  const total = sideSpan();
   if (!total) return 0;
   return Math.min(1, (wind ? wind.pos : sidePosition()) / total);
+}
+
+/* --- 이어 듣기(F-19): 테이프마다 면·곡·곡 안의 위치를 남긴다 --- */
+const RESUME_SAVE_MS = 2000; // 재생 중에는 이 간격으로 저장
+const RESUME_BACKUP_KEY = 'awesome-mix:resume'; // 창을 닫는 순간의 위치(IndexedDB 저장이 끝나기 전에 닫힐 수 있어서)
+let lastResumeSave = 0;
+
+// 창을 닫을 때: 바로 기록되는 localStorage에도 남긴다
+function backupResume() {
+  saveResume();
+  const tape = deckTape();
+  if (!tape?.resume) return;
+  try { localStorage.setItem(RESUME_BACKUP_KEY, JSON.stringify({ tapeId: tape.id, resume: tape.resume })); } catch { /* 저장 공간을 못 쓰면 건너뛴다 */ }
+}
+
+// 다음 방문 때: 백업이 IndexedDB 값보다 새것이면 쓴다
+function applyResumeBackup() {
+  let backup = null;
+  try { backup = JSON.parse(localStorage.getItem(RESUME_BACKUP_KEY)); localStorage.removeItem(RESUME_BACKUP_KEY); } catch { return; }
+  const tape = tapeById(backup?.tapeId);
+  if (!tape || (tape.resume?.at || 0) >= (backup.resume?.at || 0)) return;
+  tape.resume = backup.resume;
+  saveTape(tape);
+}
+
+function saveResume() {
+  const tape = deckTape();
+  if (!tape) return;
+  const spot = wind ? locate(wind.pos) : { index: deck.index, offset: audio.currentTime || 0 };
+  tape.resume = {
+    side: deck.side,
+    trackId: deck.queue.length ? deck.queue[spot.index] : null,
+    offset: deck.queue.length ? spot.offset : 0,
+    ended: deck.ended,
+    at: Date.now(),
+  };
+  lastResumeSave = Date.now();
+  saveTape(tape);
+}
+
+// 테이프를 넣은 뒤 남겨 둔 자리로 옮긴다(재생은 하지 않는다)
+function restoreResume(tape) {
+  const r = tape.resume;
+  if (!r?.trackId) return '';
+  deck.queue = sideIds(deck.side).filter((id) => isPlayable(library.get(id)));
+  const index = deck.queue.indexOf(r.trackId);
+  if (index < 0) { deck.queue = []; return ''; }
+  loadIndex(index);
+  Engine.seek(r.offset);
+  deck.ended = !!r.ended;
+  return r.ended ? `${deck.side}면 끝에 멈춰 있던 테이프입니다` : `지난번 자리(${pad2(index + 1)}번 곡 ${fmt(r.offset)})부터 이어 듣습니다`;
 }
 
 /* --- REW·FF 감기(F-12): 감는 동안 음악은 멈추고 면 위치만 움직인다 --- */
@@ -1409,17 +1936,27 @@ function stopWind(reason) {
   } else {
     moveTo(pos, resume);
   }
+  saveResume();
 }
 
-audio.addEventListener('ended', () => {
+audio.addEventListener('ended', async () => {
   if (deck.state !== 'PLAY') return; // 정지 상태에서 끝으로 옮긴 경우는 무시
   if (deck.index < deck.queue.length - 1) {
     loadIndex(deck.index + 1);
     startPlayback();
+    return;
+  }
+  // 면 끝: 릴 정지, "딱", PLAY 키가 튀어오른다
+  deck.ended = true;
+  Sfx.play('end', { needContext: true });
+  setState('STOP');
+  saveResume();
+  const otherHasSongs = sideIds('B').some((id) => isPlayable(library.get(id)));
+  if (deckSettings.autoReverse && deck.side === 'A' && otherHasSongs) {
+    // 오토 리버스: 뒤집어서 B면 첫 곡부터 이어 재생
+    await runDeckAction(flipSide);
+    if (deck.side === 'B') playFrom();
   } else {
-    deck.ended = true;
-    Sfx.play('end', { needContext: true });
-    setState('STOP');
     showMessage(deck.side + '면이 끝났습니다.');
   }
 });
@@ -1449,12 +1986,18 @@ const Media = {
     if (!t || t.id === this.shownId) return;
     this.shownId = t.id;
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: t.title, artist: t.artist, album: t.album || tape.title,
+      title: t.title, artist: t.artist, album: t.album || deckTape()?.title || '',
       artwork: t.art ? [{ src: t.art }] : [],
     });
   },
 };
-audio.addEventListener('timeupdate', () => renderLcd());
+audio.addEventListener('timeupdate', () => {
+  renderLcd();
+  if (deck.state === 'PLAY' && Date.now() - lastResumeSave > RESUME_SAVE_MS) saveResume();
+});
+// 창을 닫거나 다른 탭으로 갈 때도 듣던 자리를 남긴다
+window.addEventListener('pagehide', backupResume);
+document.addEventListener('visibilitychange', () => { if (document.hidden) backupResume(); });
 
 /* ===== Reels: 릴 각도·반지름 갱신 ===== */
 const TAPE_SPEED_CM = 4.76;      // 카세트 주행 속도(cm/s)
@@ -1527,30 +2070,316 @@ const Reels = {
 };
 
 /* ===== Shelf: 테이프 목록, 끌어서 넣기, 편집기 ===== */
-function renderShelf() {
-  const shelf = $('shelf');
-  setText($('shelfCount'), (tapeHasTracks() ? '1개' : '0개') + (library.size ? ` · 라이브러리 ${library.size}곡` : '')
-    + (scan.done < scan.total ? ` · 테이프 녹음 중… ${scan.done}/${scan.total}` : ''));
-  if (!tapeHasTracks()) return;
-  let spine = shelf.querySelector('.spine');
-  if (!spine) {
-    spine = el('button', 'spine');
-    spine.type = 'button';
-    spine.innerHTML = '<span class="spine-len"></span><span class="spine-title"></span>';
-    spine.addEventListener('click', () => {
-      if (deck.loaded) showMessage('이 테이프는 데크에 들어 있습니다. 꺼내려면 정지 상태에서 STOP/EJECT를 누르세요.');
-      else runDeckAction(insertTape);
-    });
-    shelf.replaceChildren(spine);
-  }
-  spine.style.setProperty('--tape-color', tape.color);
-  spine.classList.toggle('in-deck', deck.loaded);
-  setText(spine.querySelector('.spine-len'), tape.length);
-  const title = spine.querySelector('.spine-title');
-  setText(title, tape.title);
-  title.className = 'spine-title ' + handClass(tape.title);
-  spine.setAttribute('aria-label', `${tape.title}, ${tape.length}` + (deck.loaded ? ', 데크에 들어 있음' : ''));
+const spines = new Map(); // 테이프 id → 책등 버튼
+const shelfEmpty = $('shelf').querySelector('.shelf-empty'); // 선반이 비었을 때의 안내
+const DRAG_TRACK = 'application/x-awesome-track';
+const DRAG_TAPE = 'application/x-awesome-tape';
+
+function makeSpine(tape) {
+  const spine = el('button', 'spine');
+  spine.type = 'button';
+  spine.draggable = true; // 데크 위로 끌어다 놓아도 넣는다(F-42)
+  spine.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData(DRAG_TAPE, tape.id);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  spine.innerHTML = '<span class="spine-len"></span><span class="spine-title"></span><span class="spine-ai" hidden>AI</span>';
+  spine.addEventListener('click', () => {
+    if (deck.loaded && deck.tapeId === tape.id) {
+      showMessage('이 테이프는 데크에 들어 있습니다. 꺼내려면 정지 상태에서 STOP/EJECT를 누르세요.');
+    } else {
+      loadTapeToDeck(tape.id);
+    }
+  });
+  return spine;
 }
+
+function renderShelf() {
+  const tapes = [...shelfTapes].sort((a, b) => a.order - b.order);
+  setText($('shelfCount'), `${tapes.length}개` + (library.size ? ` · 라이브러리 ${library.size}곡` : '')
+    + (scan.done < scan.total ? ` · 테이프 녹음 중… ${scan.done}/${scan.total}` : ''));
+  for (const id of spines.keys()) if (!tapeById(id)) spines.delete(id);
+  if (!tapes.length) {
+    if (!$('shelf').contains(shelfEmpty)) $('shelf').replaceChildren(shelfEmpty);
+    return;
+  }
+  const list = tapes.map((tape) => {
+    if (!spines.has(tape.id)) spines.set(tape.id, makeSpine(tape));
+    const spine = spines.get(tape.id);
+    const inDeck = deck.loaded && deck.tapeId === tape.id;
+    spine.style.setProperty('--tape-color', tape.color);
+    spine.style.setProperty('--tape-ink', tape.ink || 'var(--ink)');
+    spine.classList.toggle('in-deck', inDeck);
+    setText(spine.querySelector('.spine-len'), tape.length);
+    const title = spine.querySelector('.spine-title');
+    setText(title, tape.title);
+    title.className = 'spine-title ' + handClass(tape.title);
+    spine.querySelector('.spine-ai').hidden = tape.made !== 'ai';
+    spine.setAttribute('aria-label', `${tape.title}, ${tape.length}` + (tape.made === 'ai' ? ', AI가 만든 테이프' : '') + (inDeck ? ', 데크에 들어 있음' : ''));
+    return spine;
+  });
+  const shelf = $('shelf');
+  if (list.length !== shelf.children.length || list.some((s, i) => shelf.children[i] !== s)) shelf.replaceChildren(...list);
+}
+
+/* --- 테이프 편집기(F-40): 사본(draft)을 고치다가 저장할 때만 테이프에 반영한다 --- */
+const TAPE_COLORS = [
+  { name: '주황', color: 'var(--accent)', ink: 'var(--ink)' },
+  { name: '청록', color: 'var(--ai)', ink: 'var(--ink)' },
+  { name: '아이보리', color: 'var(--paper)', ink: 'var(--pen)' },
+  { name: '호박', color: 'var(--lcd)', ink: 'var(--ink)' },
+  { name: '파랑', color: 'var(--pen)', ink: 'var(--paper)' },
+  { name: '먹색', color: 'var(--ink)', ink: 'var(--paper)' },
+];
+const ED_LIB_LIMIT = 300; // 라이브러리 목록은 이만큼만 그리고, 나머지는 검색으로 찾는다
+
+// 곡 순서를 지키면서 두 면의 재생 시간 차이가 가장 작은 곳에서 자른다(F-16)
+function splitSides(ids) {
+  const secs = ids.map((id) => library.get(id)?.sec || 0);
+  const total = secs.reduce((a, b) => a + b, 0);
+  let acc = 0, cut = 0, best = Infinity;
+  for (let i = 0; i <= ids.length; i++) {
+    const diff = Math.abs(total - 2 * acc);
+    if (diff <= best) { best = diff; cut = i; }
+    if (i < ids.length) acc += secs[i];
+  }
+  return { A: ids.slice(0, cut), B: ids.slice(cut) };
+}
+
+const Editor = {
+  draft: null, // { tapeId, title, length, color, ink, A, B }
+  confirmDelete: false,
+
+  init() {
+    const box = $('edColors');
+    TAPE_COLORS.forEach((c, i) => {
+      const input = Object.assign(el('input', 'swatch', box), { type: 'radio', name: 'edColor', value: String(i) });
+      input.style.background = c.color;
+      input.setAttribute('aria-label', c.name);
+      input.addEventListener('change', () => { Object.assign(this.draft, { color: c.color, ink: c.ink }); });
+    });
+    $('edTitle').addEventListener('input', (e) => { this.draft.title = e.target.value; });
+    $('edLength').addEventListener('change', (e) => { this.draft.length = e.target.value; this.render(); });
+    $('edSearch').addEventListener('input', () => this.renderLibrary());
+    $('edSplit').addEventListener('click', () => this.split());
+    $('edSave').addEventListener('click', () => this.save());
+    $('edCancel').addEventListener('click', () => this.close());
+    $('edClose').addEventListener('click', () => this.close());
+    $('edDelete').addEventListener('click', () => this.remove());
+    $('tapeEditor').addEventListener('close', () => { this.draft = null; });
+    // 곡 줄의 버튼(A·B·↑·↓·✕)
+    $('tapeEditor').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const id = btn.closest('.ed-row').dataset.id;
+      const action = btn.dataset.action;
+      if (action === 'A' || action === 'B') this.place(id, action);
+      else if (action === 'up' || action === 'down') this.nudge(id, action === 'up' ? -1 : 1);
+      else if (action === 'remove') this.place(id, null);
+    });
+    for (const list of [$('edLib'), $('edSideA'), $('edSideB')]) this.bindDrop(list);
+  },
+
+  open(tapeId = null) {
+    const t = tapeById(tapeId);
+    const color = t ? { color: t.color, ink: t.ink || 'var(--ink)' } : TAPE_COLORS[shelfTapes.length % TAPE_COLORS.length];
+    this.draft = { tapeId: t?.id || null, title: t?.title || '', length: t?.length || 'C90', color: color.color, ink: color.ink, A: [...(t?.sideA || [])], B: [...(t?.sideB || [])] };
+    this.confirmDelete = false;
+    $('editorTitle').textContent = t ? '테이프 편집' : '새 테이프';
+    $('edSave').textContent = t ? '저장' : '선반에 꽂기';
+    $('edDelete').hidden = !t;
+    $('edDelete').textContent = '테이프 지우기';
+    $('edTitle').value = this.draft.title;
+    $('edLength').value = this.draft.length;
+    $('edSearch').value = '';
+    for (const input of $('edColors').querySelectorAll('input')) input.checked = TAPE_COLORS[input.value].color === this.draft.color;
+    this.render();
+    $('tapeEditor').showModal();
+    $('edTitle').focus();
+  },
+
+  close() { $('tapeEditor').close(); },
+
+  sideOf(id) { return this.draft.A.includes(id) ? 'A' : this.draft.B.includes(id) ? 'B' : null; },
+
+  // 곡을 side 면의 index 자리에 놓는다. side가 null이면 테이프에서 뺀다.
+  place(id, side, index = null) {
+    const d = this.draft;
+    const from = this.sideOf(id);
+    let at = index ?? (side ? d[side].length : 0);
+    if (from) {
+      const old = d[from].indexOf(id);
+      d[from].splice(old, 1);
+      if (from === side && old < at) at--;
+    }
+    if (side) d[side].splice(Math.min(at, d[side].length), 0, id);
+    this.render();
+  },
+
+  // 한 칸 위·아래로. 면의 끝을 넘으면 다른 면으로 넘어간다.
+  nudge(id, dir) {
+    const d = this.draft, side = this.sideOf(id), i = d[side].indexOf(id);
+    if (dir < 0 && i === 0 && side === 'B') this.place(id, 'A');
+    else if (dir > 0 && i === d[side].length - 1 && side === 'A') this.place(id, 'B', 0);
+    else this.place(id, side, i + (dir > 0 ? 2 : -1));
+    $('tapeEditor').querySelector(`.ed-side .ed-row[data-id="${CSS.escape(id)}"] button[data-action="${dir < 0 ? 'up' : 'down'}"]`)?.focus();
+  },
+
+  split() {
+    const { A, B } = splitSides([...this.draft.A, ...this.draft.B]);
+    Object.assign(this.draft, { A, B });
+    this.render();
+  },
+
+  row(t, n, buttons) {
+    const li = el('li', 'ed-row');
+    li.dataset.id = t.id;
+    li.draggable = !(t.broken || t.missing);
+    li.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData(DRAG_TRACK, t.id);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el('span', 'n', li).textContent = n;
+    const meta = el('span', '', li);
+    el('span', 't', meta).textContent = t.title;
+    el('span', 'a', meta).textContent = trackNote(t);
+    el('span', 'd', li).textContent = fmt(t.sec);
+    const box = el('span', 'ed-btns', li);
+    for (const [label, aria, action, disabled] of buttons) {
+      const b = el('button', '', box);
+      Object.assign(b, { type: 'button', textContent: label, disabled: !!disabled });
+      b.dataset.action = action;
+      b.setAttribute('aria-label', `${t.title}: ${aria}`);
+    }
+    return li;
+  },
+
+  renderLibrary() {
+    const q = $('edSearch').value.trim().toLowerCase();
+    const used = new Set([...this.draft.A, ...this.draft.B]);
+    const match = libraryOrder.map((id) => library.get(id))
+      .filter((t) => !q || `${t.title} ${t.artist} ${t.album}`.toLowerCase().includes(q));
+    const rows = match.slice(0, ED_LIB_LIMIT).map((t) => {
+      const bad = t.broken || t.missing;
+      const li = this.row(t, '', [['A', 'A면에 넣기', 'A', bad || used.has(t.id)], ['B', 'B면에 넣기', 'B', bad || used.has(t.id)]]);
+      li.classList.toggle('is-used', used.has(t.id));
+      li.classList.toggle('is-bad', bad);
+      if (used.has(t.id)) li.draggable = false;
+      return li;
+    });
+    $('edLib').replaceChildren(...rows);
+    $('edLibHint').textContent = !library.size ? '먼저 폴더를 열어 곡을 불러와 주세요.'
+      : match.length > ED_LIB_LIMIT ? `${match.length}곡 중 ${ED_LIB_LIMIT}곡만 보입니다. 검색으로 좁혀 주세요.`
+      : '곡을 면으로 끌어 놓거나 A·B 버튼을 누르세요.';
+  },
+
+  render() {
+    const d = this.draft;
+    if (!d) return;
+    this.renderLibrary();
+    const limit = TAPE_SIDE_SEC[d.length];
+    const warns = [];
+    for (const side of ['A', 'B']) {
+      const ids = d[side];
+      const rows = ids.map((id, i) => this.row(library.get(id), pad2(i + 1), [
+        ['↑', '위로', 'up', side === 'A' && i === 0],
+        ['↓', '아래로', 'down', side === 'B' && i === ids.length - 1],
+        ['✕', '빼기', 'remove'],
+      ]));
+      $('edSide' + side).replaceChildren(...rows);
+      const used = sumSec(ids);
+      const over = used > limit;
+      setText($('edCap' + side), `${fmt(used)} / ${fmt(limit)}`);
+      $('edCap' + side).classList.toggle('is-over', over);
+      $('edBar' + side).style.width = Math.min(100, (used / limit) * 100) + '%';
+      $('edBar' + side).parentElement.classList.toggle('is-over', over);
+      if (over) warns.push(`${side}면이 ${fmt(used - limit)} 넘칩니다`);
+    }
+    if (!d.A.length && !d.B.length) warns.push('곡을 하나 이상 넣어 주세요');
+    $('edWarn').textContent = warns.length ? warns.join(' · ') + '.' : '';
+    $('edSave').disabled = warns.length > 0; // 넘친 테이프는 꽂을 수 없다
+  },
+
+  // 끌어 놓기: 줄의 위쪽 절반이면 그 앞에, 아니면 다음 줄 앞에 놓는다
+  bindDrop(list) {
+    const zone = list.dataset.zone;
+    const clear = () => {
+      list.classList.remove('is-drop-end');
+      list.querySelectorAll('.is-drop-before').forEach((r) => r.classList.remove('is-drop-before'));
+    };
+    const indexAt = (y) => {
+      const rows = [...list.children];
+      const i = rows.findIndex((r) => { const b = r.getBoundingClientRect(); return y < b.top + b.height / 2; });
+      return i < 0 ? rows.length : i;
+    };
+    list.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer.types.includes(DRAG_TRACK)) return;
+      e.preventDefault();
+      clear();
+      if (zone === 'lib') return;
+      const i = indexAt(e.clientY);
+      if (i < list.children.length) list.children[i].classList.add('is-drop-before');
+      else list.classList.add('is-drop-end');
+    });
+    list.addEventListener('dragleave', (e) => { if (!list.contains(e.relatedTarget)) clear(); });
+    list.addEventListener('drop', (e) => {
+      const id = e.dataTransfer.getData(DRAG_TRACK);
+      if (!id) return;
+      e.preventDefault();
+      e.stopPropagation();
+      clear();
+      if (zone === 'lib') this.place(id, null);
+      else this.place(id, zone, indexAt(e.clientY));
+    });
+  },
+
+  save() {
+    const d = this.draft;
+    if (!d || $('edSave').disabled) return;
+    let tape = tapeById(d.tapeId);
+    const isNew = !tape;
+    if (isNew) {
+      tape = newTape();
+      shelfTapes.push(tape);
+    }
+    const changed = isNew || tape.sideA.join() !== d.A.join() || tape.sideB.join() !== d.B.join();
+    Object.assign(tape, { title: d.title.trim() || '이름 없는 테이프', length: d.length, color: d.color, ink: d.ink, sideA: [...d.A], sideB: [...d.B] });
+    if (changed) tape.resume = null;
+    saveTape(tape);
+    // 데크에 든 테이프의 곡이 바뀌었으면 처음부터 다시 듣는다
+    if (changed && deck.loaded && deck.tapeId === tape.id) {
+      Engine.pause();
+      Object.assign(deck, { queue: [], index: 0, ended: false });
+      setState('STOP');
+    }
+    viewTapeId = tape.id;
+    jcardSide = deck.loaded && deck.tapeId === tape.id ? deck.side : 'A';
+    this.close();
+    showMessage(`"${tape.title}" 테이프를 ${isNew ? '선반에 꽂았습니다. 책등을 누르면 데크에 넣습니다' : '저장했습니다'}.`);
+    render();
+  },
+
+  // 두 번 눌러야 지운다
+  remove() {
+    const tape = tapeById(this.draft?.tapeId);
+    if (!tape) return;
+    if (deck.loaded && deck.tapeId === tape.id) {
+      $('edWarn').textContent = '데크에 들어 있는 테이프는 지울 수 없습니다. 먼저 꺼내 주세요.';
+      return;
+    }
+    if (!this.confirmDelete) {
+      this.confirmDelete = true;
+      $('edDelete').textContent = '한 번 더 누르면 지웁니다';
+      return;
+    }
+    shelfTapes.splice(shelfTapes.indexOf(tape), 1);
+    Store.delete('tapes', tape.id);
+    if (viewTapeId === tape.id) viewTapeId = shelfTapes[0]?.id || null;
+    this.close();
+    showMessage(`"${tape.title}" 테이프를 지웠습니다.`);
+    render();
+  },
+};
 
 /* ===== Curator: OpenRouter 호출, 응답 검증, 미리 보기 ===== */
 
@@ -1579,16 +2408,21 @@ function makeRow(tag) {
   return li;
 }
 
+function trackNote(t) {
+  const artist = t.artist || '알 수 없는 가수';
+  if (t.missing) return artist + ' · 파일을 찾을 수 없음';
+  if (t.broken) return t.brokenReason === 'ALAC' ? artist + ' · ALAC 재생 불가' : '읽을 수 없는 파일';
+  return t.temp ? artist + ' · 임시 곡' : artist;
+}
+
 function fillRow(row, t, i, isCurrent) {
   row.dataset.id = t.id;
   row.classList.toggle('is-current', isCurrent);
-  row.classList.toggle('is-broken', t.broken);
+  row.classList.toggle('is-broken', t.broken || t.missing);
   if (isCurrent) row.setAttribute('aria-current', 'true'); else row.removeAttribute('aria-current');
   setText(row.querySelector('.n'), String(i + 1).padStart(2, '0'));
   setText(row.querySelector('.t'), t.title);
-  const artist = t.artist || '알 수 없는 가수';
-  setText(row.querySelector('.a'), !t.broken ? artist
-    : t.brokenReason === 'ALAC' ? artist + ' · ALAC 재생 불가' : '읽을 수 없는 파일');
+  setText(row.querySelector('.a'), trackNote(t));
   setText(row.querySelector('.d'), t.ready ? fmt(t.sec) : '--:--');
   const art = row.querySelector('.art');
   if (t.art && !art.firstChild) art.append(Object.assign(document.createElement('img'), { src: t.art, alt: '' }));
@@ -1607,17 +2441,21 @@ function renderList(ol, ids, currentId, tag) {
 }
 
 function renderJcard() {
-  const has = tapeHasTracks();
-  setText($('jcardKicker'), 'J-CARD · ' + tape.length);
+  const tape = viewTape();
+  const has = hasTracks(tape);
+  const length = tape?.length || 'C90';
+  setText($('jcardKicker'), 'J-CARD · ' + length);
   setText($('jcardTitle'), has ? tape.title : '빈 테이프');
+  $('editTape').hidden = !tape;
   for (const side of ['A', 'B']) $('tab' + side).setAttribute('aria-selected', String(jcardSide === side));
   $('jcardList').setAttribute('aria-labelledby', 'tab' + jcardSide);
-  const ids = sideIds(jcardSide);
+  const ids = sideIds(jcardSide, tape);
   const used = sumSec(ids);
-  const total = TAPE_SIDE_SEC[tape.length];
+  const total = TAPE_SIDE_SEC[length];
   setText($('capText'), `${fmt(used)} / ${fmt(total)}`);
   $('capBar').style.width = Math.min(100, (used / total) * 100) + '%';
-  const currentId = deck.queue.length && deck.side === jcardSide ? deck.queue[deck.index] : null;
+  const inDeck = deck.loaded && deck.tapeId === tape?.id;
+  const currentId = inDeck && deck.queue.length && deck.side === jcardSide ? deck.queue[deck.index] : null;
   if (!has) {
     if (!$('jcardList').querySelector('.empty-hint')) {
       $('jcardList').innerHTML = '<li class="empty-hint">폴더를 열면 곡을 골라 테이프를 채웁니다.</li>';
@@ -1628,14 +2466,39 @@ function renderJcard() {
   renderList($('jcardList'), ids, currentId, 'button');
 }
 
+const ACCESS_TEXT = { granted: '읽기 가능', prompt: '권한 필요', denied: '권한 거부됨' };
+
 function renderLibrary() {
   setText($('libCount'), scan.done < scan.total ? `테이프 녹음 중… ${scan.done}/${scan.total}` : library.size ? `${library.size}곡` : '');
+  // 폴더 목록과 읽기 권한
+  const items = [...roots.values()].map((root) => {
+    const li = el('li', 'root-item');
+    const tracks = [...library.values()].filter((t) => t.rootId === root.id);
+    const missing = tracks.filter((t) => t.missing).length;
+    li.append(Object.assign(el('span', 'root-name'), { textContent: `${root.kind === 'directory' ? '폴더' : '파일'} · ${root.name} · ${tracks.length}곡` }));
+    li.append(Object.assign(el('span', 'root-access'), {
+      textContent: (ACCESS_TEXT[root.access] || root.access) + (missing ? ` · 찾을 수 없음 ${missing}곡` : ''),
+    }));
+    if (root.access !== 'granted') {
+      const btn = Object.assign(el('button', 'btn btn-small'), { type: 'button', textContent: '읽기 허락' });
+      btn.addEventListener('click', () => requestAccess([root.id]));
+      li.append(btn);
+    } else if (missing && root.kind === 'directory') {
+      const btn = Object.assign(el('button', 'btn btn-small'), { type: 'button', textContent: '다시 찾기' });
+      btn.setAttribute('aria-label', `${root.name} 폴더에서 사라진 곡 다시 찾기`);
+      btn.addEventListener('click', () => relocateRoot(root));
+      li.append(btn);
+    }
+    return li;
+  });
+  $('rootList').replaceChildren(...items);
   renderList($('libList'), libraryOrder, null, 'div');
 }
 
 function renderCassette() {
   const cassette = $('cassette');
-  if (!cassette) return;
+  const tape = deckTape();
+  if (!cassette || !tape) return;
   cassette.style.setProperty('--tape-color', tape.color);
   const title = $('labelTitle');
   setText(title, tape.title);
@@ -1665,9 +2528,9 @@ function renderLcd() {
     setText($('lcdTitle'), t.title);
     setText($('lcdArtist'), t.artist || '알 수 없는 가수');
   } else if (deck.loaded) {
-    setText($('lcdTitle'), tape.title);
+    setText($('lcdTitle'), deckTape().title);
     setText($('lcdArtist'), `${deck.side}면 · ${sideIds(deck.side).length}곡 · PLAY를 누르세요`);
-  } else if (tapeHasTracks()) {
+  } else if (shelfTapes.length) {
     setText($('lcdTitle'), '데크가 비어 있습니다');
     setText($('lcdArtist'), '선반의 테이프를 누르면 데크에 넣습니다');
   }
@@ -1755,15 +2618,40 @@ function bindEvents() {
   $('fileInput').addEventListener('change', (e) => {
     const files = [...e.target.files].filter((f) => AUDIO_EXT.test(f.name));
     e.target.value = '';
-    addFiles(files.map((file) => ({ file, path: file.webkitRelativePath || file.name, handle: null })));
+    addFiles(files.map((file) => ({ file, path: file.webkitRelativePath || file.name }))).then(finishScan);
   });
-  window.addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('is-dragging'); });
+  // 파일·폴더를 끌어 올 때만 창 전체가 놓을 곳이 된다(테이프·곡을 끄는 것과 구분)
+  window.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    document.body.classList.add('is-dragging');
+  });
   window.addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('is-dragging'); });
   window.addEventListener('drop', onDrop);
+  // 선반의 책등을 데크 위에 놓으면 넣는다
+  const well = $('deckWell');
+  well.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer.types.includes(DRAG_TAPE)) return;
+    e.preventDefault();
+    well.classList.add('is-drop-target');
+  });
+  well.addEventListener('dragleave', (e) => { if (!well.contains(e.relatedTarget)) well.classList.remove('is-drop-target'); });
+  well.addEventListener('drop', (e) => {
+    const id = e.dataTransfer.getData(DRAG_TAPE);
+    well.classList.remove('is-drop-target');
+    if (!id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    loadTapeToDeck(id);
+  });
+  Editor.init();
+  $('newTape').addEventListener('click', () => Editor.open());
+  $('editTape').addEventListener('click', () => { const t = viewTape(); if (t) Editor.open(t.id); });
   $('keyPlay').addEventListener('click', pressPlay);
   $('keyStop').addEventListener('click', pressStop);
   const holdKeys = { ArrowLeft: makeHoldKey($('keyRew'), -1), ArrowRight: makeHoldKey($('keyFf'), 1) };
   $('flipBtn').addEventListener('click', () => runDeckAction(flipSide));
+  $('volume').value = Math.round(Engine.settings.volume * 10);
   $('volume').addEventListener('input', (e) => Engine.setVolume(e.target.value / 10));
   $('volume').addEventListener('wheel', (e) => {
     e.preventDefault();
@@ -1771,7 +2659,6 @@ function bindEvents() {
     slider.value = Number(slider.value) + (e.deltaY < 0 ? 1 : -1);
     slider.dispatchEvent(new Event('input'));
   }, { passive: false });
-  Engine.setVolume($('volume').value / 10);
   bindShortcuts(holdKeys);
   Media.init();
   // 첫 클릭·키 입력 때 효과음용 AudioContext를 만든다(선반에서 처음 넣을 때도 소리가 나게)
@@ -1813,6 +2700,13 @@ function bindSettings() {
   hiss.addEventListener('input', () => { Engine.set({ hissLevel: Number(hiss.value) }); show(); });
   wow.addEventListener('input', () => { Engine.set({ wowDepthMs: Number(wow.value) }); show(); });
   tone.addEventListener('change', () => Engine.set({ tone: tone.checked }));
+  // 테이프 데크 설정
+  $('autoReverse').checked = deckSettings.autoReverse;
+  $('autoReverse').addEventListener('change', (e) => { deckSettings.autoReverse = e.target.checked; saveSettings(); });
+  for (const radio of document.querySelectorAll('input[name="sideBasis"]')) {
+    radio.checked = radio.value === deckSettings.sideBasis;
+    radio.addEventListener('change', () => { deckSettings.sideBasis = radio.value; saveSettings(); renderLcd(); });
+  }
   $('openSettings').addEventListener('click', () => $('settingsDialog').showModal());
   $('closeSettings').addEventListener('click', () => $('settingsDialog').close());
   $('settingsDialog').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
@@ -1825,6 +2719,8 @@ if (problem) {
   $('main').hidden = true;
   $('actions').hidden = true;
 } else {
+  await Store.open();
+  const restored = await restore();
   bindEvents();
   try {
     buildImageDeck(await loadAssets());
@@ -1834,6 +2730,12 @@ if (problem) {
     showMessage('실사 이미지를 불러오지 못해 기본 데크로 표시합니다.');
   }
   render();
+  if (restored.tapes) {
+    showMessage(`지난 선반을 불러왔습니다(테이프 ${restored.tapes}개).`
+      + (restored.needsAccess ? ' 테이프를 넣을 때 폴더 읽기 권한을 한 번 묻습니다.' : ''));
+  }
+  // 권한이 이미 있는 폴더(크롬 "항상 허용")는 바로 뒤에서 다시 훑는다
+  for (const root of roots.values()) if (root.access === 'granted') scanRoot(root).then(finishScan);
   if (!window.jsmediatags) showMessage('태그 읽기 도구를 불러오지 못해 파일 이름으로 표시합니다.');
 }
 </script>
