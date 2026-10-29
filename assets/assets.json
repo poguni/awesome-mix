@@ -11,7 +11,7 @@
     "lcd": [449, 996, 1150, 135],
     "keyChannel": [466, 1159, 1112, 97],
     "lid": {
-      "image": "deck/deck-lid.webp",
+      "image": "deck/deck-lid-remove.webp",
       "hingeY": 928
     }
   },

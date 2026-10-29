@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Awesome Mix</title>
 <link rel="icon" href="data:,">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&amp;family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@500&amp;family=Nanum+Pen+Script&amp;family=Permanent+Marker&amp;family=VT323&amp;display=swap" rel="stylesheet">
@@ -54,33 +55,477 @@ body {
   color: var(--muted);
   letter-spacing: 0.04em;
 }
+
+/* M1 임시 화면(시안 A 배치는 M2에서) */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  height: 44px; padding: 0 18px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--text);
+  font: inherit; font-size: 14px; display: inline-flex; align-items: center; cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.btn:focus-within, button:focus-visible { outline: 2px solid var(--lcd); outline-offset: 2px; }
+#main { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; padding: 26px; min-width: 0; }
+.panel h2 { margin: 0 0 12px; font-size: 20px; }
+.panel h3 { margin: 0 0 8px; font-family: 'Archivo Narrow', sans-serif; font-size: 13px; letter-spacing: 0.24em; color: var(--muted); }
+.lcd { background: var(--lcd-bg); color: var(--lcd); border-radius: 14px; padding: 14px 18px; }
+.lcd-top { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; }
+.lcd-title { font-size: 22px; font-weight: 700; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcd-artist { font-size: 14px; opacity: 0.8; }
+.keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.key {
+  height: 72px; border-radius: 14px; border: 1px solid var(--line); background: var(--key); color: var(--text);
+  font-family: 'Archivo Narrow', sans-serif; font-size: 13px; letter-spacing: 0.24em; cursor: pointer;
+  box-shadow: 0 4px 0 #050506;
+}
+.key[aria-pressed="true"] { transform: translateY(4px); box-shadow: none; }
+#keyPlay { background: var(--accent); color: var(--ink); font-weight: 700; }
+.message { min-height: 1.55em; margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.tracks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.track {
+  width: 100%; min-height: 48px; border: none; border-radius: 12px; padding: 6px 10px;
+  display: grid; grid-template-columns: 26px 32px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.track:hover { background: var(--key); }
+.track.is-current { background: var(--paper); color: var(--ink); }
+.track:disabled { opacity: 0.4; cursor: default; }
+.track .n, .track .d { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+.track .art { width: 32px; height: 32px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.track .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.track .t { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track .a { display: block; font-size: 13px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notice { background: var(--lcd-bg); color: var(--lcd); border-radius: 14px; padding: 18px 22px; }
+body.is-dragging .app { outline: 2px dashed var(--accent); outline-offset: -8px; }
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand-name">AWESOME MIX</div>
-    <div class="brand-sub">STEREO TAPE DECK · 로컬 MP3 플레이어</div>
+    <div>
+      <div class="brand-name">AWESOME MIX</div>
+      <div class="brand-sub">STEREO TAPE DECK · 로컬 MP3 플레이어</div>
+    </div>
+    <div class="actions" id="actions">
+      <button type="button" class="btn" id="openFolder">폴더 열기</button>
+      <label class="btn">파일 고르기
+        <input type="file" id="fileInput" multiple accept=".mp3,.m4a,.ogg,.flac,.wav">
+      </label>
+    </div>
   </header>
-  <main id="main"></main>
+  <div class="notice" id="notice" role="alert" hidden></div>
+  <main id="main">
+    <section class="panel" aria-label="테이프 데크">
+      <div class="lcd" role="status" aria-live="polite">
+        <div class="lcd-top"><span id="lcdSide">SIDE A · -- · STOP</span><span id="lcdTime">0:00 / 0:00</span></div>
+        <div class="lcd-title" id="lcdTitle">테이프가 비어 있습니다</div>
+        <div class="lcd-artist" id="lcdArtist">폴더를 열거나 음악 파일을 끌어다 놓으세요</div>
+      </div>
+      <div class="keys">
+        <button type="button" class="key" id="keyRew" aria-label="되감기">REW</button>
+        <button type="button" class="key" id="keyPlay" aria-label="재생" aria-pressed="false">PLAY</button>
+        <button type="button" class="key" id="keyStop" aria-label="정지" aria-pressed="true">STOP</button>
+        <button type="button" class="key" id="keyFf" aria-label="빨리 감기">FF</button>
+      </div>
+      <p class="message" id="message" aria-live="polite"></p>
+    </section>
+    <section class="panel" aria-label="테이프 곡 목록">
+      <h2 id="tapeTitle">Awesome Mix Vol. 1</h2>
+      <div class="sides">
+        <div><h3>SIDE A <span id="sideATime"></span></h3><ol class="tracks" id="sideA" data-src="A"></ol></div>
+        <div><h3>SIDE B <span id="sideBTime"></span></h3><ol class="tracks" id="sideB" data-src="B"></ol></div>
+      </div>
+    </section>
+    <section class="panel" aria-label="라이브러리">
+      <h2>라이브러리 <span class="brand-sub" id="libCount"></span></h2>
+      <ol class="tracks" id="libList" data-src="LIB"></ol>
+    </section>
+  </main>
 </div>
 
 <script type="module">
+const $ = (id) => document.getElementById(id);
+const fmt = (sec) => Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+const showMessage = (text) => { $('message').textContent = text; };
+
 /* ===== Assets: assets.json 읽기, 이미지 미리 불러오기, 좌표를 %로 변환 ===== */
 
 /* ===== Store: IndexedDB 읽기·쓰기 (roots, tracks, art, tapes, settings) ===== */
 
 /* ===== Library: 폴더 스캔, 태그·길이 읽기, 권한 재요청 ===== */
+const AUDIO_EXT = /\.(mp3|m4a|ogg|flac|wav)$/i;
+const library = new Map();   // id → 곡
+const libraryKeys = new Set(); // 같은 파일을 두 번 넣지 않게
+let libraryOrder = [];
+let nextId = 1;
+const scan = { total: 0, done: 0 };
+
+// 태그가 없을 때 "가수 - 제목.mp3"에서 읽는다
+function parseFileName(name) {
+  const base = name.replace(/\.[^.]+$/, '');
+  const i = base.indexOf(' - ');
+  return i > 0
+    ? { artist: base.slice(0, i).trim(), title: base.slice(i + 3).trim() }
+    : { artist: '', title: base.trim() };
+}
+
+async function* walkDir(dir, prefix) {
+  for await (const handle of dir.values()) {
+    if (handle.kind === 'directory') yield* walkDir(handle, prefix + handle.name + '/');
+    else if (AUDIO_EXT.test(handle.name)) yield { handle, path: prefix + handle.name };
+  }
+}
+
+function readTags(file) {
+  return new Promise((resolve) => {
+    if (!window.jsmediatags) return resolve(null);
+    window.jsmediatags.read(file, { onSuccess: (r) => resolve(r.tags), onError: () => resolve(null) });
+  });
+}
+
+function readDuration(file) {
+  return new Promise((resolve) => {
+    const a = new Audio();
+    const url = URL.createObjectURL(file);
+    const done = (sec) => {
+      a.onloadedmetadata = a.onerror = null;
+      URL.revokeObjectURL(url);
+      a.removeAttribute('src');
+      resolve(sec);
+    };
+    a.preload = 'metadata';
+    a.onloadedmetadata = () => done(Number.isFinite(a.duration) ? a.duration : 0);
+    a.onerror = () => done(0);
+    a.src = url;
+  });
+}
+
+function artUrl(picture) {
+  if (!picture?.data?.length) return null;
+  return URL.createObjectURL(new Blob([new Uint8Array(picture.data)], { type: picture.format || 'image/jpeg' }));
+}
+
+async function readTrackInfo(track) {
+  const [tags, sec] = await Promise.all([readTags(track.file), readDuration(track.file)]);
+  if (tags) {
+    if (tags.title) track.title = tags.title;
+    if (tags.artist) track.artist = tags.artist;
+    track.album = tags.album || '';
+    track.year = parseInt(tags.year, 10) || null;
+    track.genre = tags.genre || '';
+    track.art = artUrl(tags.picture);
+  }
+  track.sec = sec;
+  track.broken = sec === 0;
+  track.ready = true;
+}
+
+async function runPool(items, limit, fn) {
+  let i = 0;
+  const worker = async () => { while (i < items.length) await fn(items[i++]); };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}
+
+// 곡을 라이브러리에 바로 넣고(파일 이름으로 표시), 태그·길이는 4개씩 뒤에서 채운다
+async function addFiles(entries) {
+  const added = [];
+  for (const { file, path, handle } of entries) {
+    const key = path + '|' + file.size + '|' + file.lastModified;
+    if (libraryKeys.has(key)) continue;
+    libraryKeys.add(key);
+    const track = {
+      id: 't' + String(nextId++).padStart(3, '0'), key, path, file, handle: handle || null,
+      ...parseFileName(file.name), album: '', year: null, genre: '', sec: 0, art: null, ready: false, broken: false,
+    };
+    library.set(track.id, track);
+    added.push(track);
+  }
+  if (!added.length) { showMessage('새로 더할 음악 파일이 없습니다.'); return; }
+  libraryOrder = [...library.keys()].sort((a, b) =>
+    library.get(a).path.localeCompare(library.get(b).path, undefined, { numeric: true }));
+  scan.total += added.length;
+  render();
+  await runPool(added, 4, async (track) => {
+    await readTrackInfo(track);
+    scan.done++;
+    render();
+  });
+  if (scan.done === scan.total) {
+    const broken = [...library.values()].filter((t) => t.broken).length;
+    showMessage(`녹음 완료 · ${library.size}곡` + (broken ? ` (읽을 수 없는 파일 ${broken}개)` : ''));
+    buildDefaultTape();
+  }
+}
+
+async function openFolder() {
+  let dir;
+  try {
+    dir = await window.showDirectoryPicker({ id: 'awesome-mix', mode: 'read' });
+  } catch (err) {
+    if (err.name !== 'AbortError') showMessage('폴더를 열 수 없습니다: ' + err.message);
+    return;
+  }
+  showMessage('폴더를 살펴보는 중…');
+  const entries = [];
+  for await (const { handle, path } of walkDir(dir, dir.name + '/')) {
+    entries.push({ file: await handle.getFile(), path, handle });
+  }
+  await addFiles(entries);
+}
+
+// 끌어다 놓기: 핸들 요청은 drop 이벤트 안에서 한꺼번에 해야 한다
+async function onDrop(e) {
+  e.preventDefault();
+  document.body.classList.remove('is-dragging');
+  const items = [...e.dataTransfer.items].filter((item) => item.kind === 'file');
+  const handles = items.map((item) => item.getAsFileSystemHandle
+    ? item.getAsFileSystemHandle().catch(() => null) : Promise.resolve(null));
+  const plainFiles = items.map((item) => item.getAsFile());
+  const entries = [];
+  for (let k = 0; k < items.length; k++) {
+    const handle = await handles[k];
+    if (handle?.kind === 'directory') {
+      for await (const { handle: h, path } of walkDir(handle, handle.name + '/')) {
+        entries.push({ file: await h.getFile(), path, handle: h });
+      }
+    } else if (handle?.kind === 'file') {
+      if (AUDIO_EXT.test(handle.name)) entries.push({ file: await handle.getFile(), path: handle.name, handle });
+    } else if (plainFiles[k] && AUDIO_EXT.test(plainFiles[k].name)) {
+      entries.push({ file: plainFiles[k], path: plainFiles[k].name, handle: null });
+    }
+  }
+  if (!entries.length) { showMessage('음악 파일(mp3·m4a·ogg·flac·wav)을 놓아 주세요.'); return; }
+  await addFiles(entries);
+}
 
 /* ===== Engine: AudioContext, 재생·이동, 히스·와우, 효과음 합성 ===== */
+const audio = new Audio();
+let audioUrl = null; // 지금 곡의 Blob URL 하나만 유지한다
+
+const Engine = {
+  load(track) {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    audioUrl = URL.createObjectURL(track.file);
+    audio.src = audioUrl;
+  },
+  play() { return audio.play(); },
+  pause() { audio.pause(); },
+  seek(sec) { audio.currentTime = sec; },
+};
 
 /* ===== Deck: 테이프 상태 머신, 면 전환, 넣기·꺼내기 ===== */
+const tape = { title: 'Awesome Mix Vol. 1', sideA: [], sideB: [] };
+const deck = { state: 'STOP', source: 'A', queue: [], index: 0, ended: false };
+
+// 곡 순서를 지키면서, 두 면의 재생 시간 차이가 가장 작은 곳에서 자른다
+function splitSides(ids) {
+  const secs = ids.map((id) => library.get(id).sec);
+  const total = secs.reduce((a, b) => a + b, 0);
+  let acc = 0, cut = 0, best = Infinity;
+  for (let i = 0; i <= ids.length; i++) {
+    const diff = Math.abs(total - 2 * acc);
+    if (diff <= best) { best = diff; cut = i; }
+    if (i < ids.length) acc += secs[i];
+  }
+  return { A: ids.slice(0, cut), B: ids.slice(cut) };
+}
+
+function buildDefaultTape() {
+  const { A, B } = splitSides(libraryOrder.filter((id) => !library.get(id).broken));
+  tape.sideA = A;
+  tape.sideB = B;
+  render();
+}
+
+const playableLibrary = () => libraryOrder.filter((id) => !library.get(id).broken);
+const sourceIds = (src) => (src === 'A' ? tape.sideA : src === 'B' ? tape.sideB : playableLibrary());
+const currentTrack = () => library.get(deck.queue[deck.index]);
+
+function setState(state) {
+  deck.state = state;
+  $('keyPlay').setAttribute('aria-pressed', String(state === 'PLAY'));
+  $('keyStop').setAttribute('aria-pressed', String(state === 'STOP'));
+  render();
+}
+
+async function startPlayback() {
+  try {
+    await Engine.play();
+    setState('PLAY');
+  } catch (err) {
+    if (err.name === 'AbortError') return; // 곡을 바꾸는 사이 끊긴 경우
+    showMessage('재생할 수 없습니다: ' + (currentTrack()?.title || '') + ' · ' + err.message);
+    setState('STOP');
+  }
+}
+
+function loadIndex(index) {
+  deck.index = index;
+  deck.ended = false;
+  Engine.load(currentTrack());
+}
+
+function playFrom(src, index) {
+  deck.source = src;
+  deck.queue = [...sourceIds(src)];
+  loadIndex(index);
+  startPlayback();
+}
+
+function pressPlay() {
+  if (!deck.queue.length) {
+    if (tape.sideA.length) return playFrom('A', 0);
+    if (playableLibrary().length) return playFrom('LIB', 0);
+    showMessage('먼저 폴더를 열거나 음악 파일을 끌어다 놓으세요.');
+    return;
+  }
+  if (deck.ended) { showMessage('면이 끝났습니다. 목록에서 곡을 골라 주세요.'); return; }
+  startPlayback();
+}
+
+function pressStop() {
+  Engine.pause();
+  setState('STOP');
+}
+
+// M1 임시: REW·FF는 이전·다음 곡(누르고 있는 동안 감기는 M3에서)
+function step(dir) {
+  if (!deck.queue.length) return;
+  const next = Math.min(deck.queue.length - 1, Math.max(0, deck.index + dir));
+  if (next === deck.index) { if (dir < 0) Engine.seek(0); return; }
+  loadIndex(next);
+  if (deck.state === 'PLAY') startPlayback(); else render();
+}
+
+audio.addEventListener('ended', () => {
+  if (deck.index < deck.queue.length - 1) {
+    loadIndex(deck.index + 1);
+    startPlayback();
+  } else {
+    deck.ended = true;
+    setState('STOP');
+    showMessage((deck.source === 'LIB' ? '라이브러리' : deck.source + '면') + '이 끝났습니다.');
+  }
+});
+audio.addEventListener('timeupdate', () => renderLcd());
 
 /* ===== Reels: 릴 각도·반지름 갱신 ===== */
 
 /* ===== Shelf: 테이프 목록, 끌어서 넣기, 편집기 ===== */
 
 /* ===== Curator: OpenRouter 호출, 응답 검증, 미리 보기 ===== */
+
+/* ===== 화면 그리기(M1 임시) ===== */
+let renderQueued = false;
+function render() {
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => {
+    renderQueued = false;
+    renderList($('sideA'), tape.sideA, 'A');
+    renderList($('sideB'), tape.sideB, 'B');
+    renderList($('libList'), libraryOrder, 'LIB');
+    $('sideATime').textContent = sideTime(tape.sideA);
+    $('sideBTime').textContent = sideTime(tape.sideB);
+    $('libCount').textContent = scan.done < scan.total
+      ? `테이프 녹음 중… ${scan.done}/${scan.total}` : library.size ? `${library.size}곡` : '';
+    renderLcd();
+  });
+}
+
+const sideTime = (ids) => (ids.length ? '· ' + fmt(ids.reduce((a, id) => a + library.get(id).sec, 0)) : '');
+
+function makeRow() {
+  const li = document.createElement('li');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'track';
+  btn.innerHTML = '<span class="n"></span><span class="art"></span><span><span class="t"></span><span class="a"></span></span><span class="d"></span>';
+  li.append(btn);
+  return li;
+}
+
+const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
+
+function fillRow(btn, t, i, isCurrent) {
+  btn.dataset.index = i;
+  btn.disabled = t.broken;
+  btn.classList.toggle('is-current', isCurrent);
+  if (isCurrent) btn.setAttribute('aria-current', 'true'); else btn.removeAttribute('aria-current');
+  setText(btn.querySelector('.n'), String(i + 1).padStart(2, '0'));
+  setText(btn.querySelector('.t'), t.title);
+  setText(btn.querySelector('.a'), t.broken ? '읽을 수 없는 파일' : t.artist || '알 수 없는 가수');
+  setText(btn.querySelector('.d'), t.ready ? fmt(t.sec) : '--:--');
+  const art = btn.querySelector('.art');
+  if (t.art && !art.firstChild) art.append(Object.assign(document.createElement('img'), { src: t.art, alt: '' }));
+}
+
+// 스캔 중에도 누를 수 있게, 줄은 다시 만들지 않고 내용만 고친다
+function renderList(ol, ids, src) {
+  const rows = ol.rows || (ol.rows = new Map());
+  const current = deck.queue.length && deck.source === src ? deck.queue[deck.index] : null;
+  const lis = ids.map((id, i) => {
+    if (!rows.has(id)) rows.set(id, makeRow());
+    const li = rows.get(id);
+    fillRow(li.firstChild, library.get(id), i, id === current);
+    return li;
+  });
+  if (lis.length !== ol.children.length || lis.some((li, i) => ol.children[i] !== li)) ol.replaceChildren(...lis);
+}
+
+function renderLcd() {
+  const t = deck.queue.length ? currentTrack() : null;
+  const side = deck.source === 'LIB' ? 'LIBRARY' : 'SIDE ' + deck.source;
+  const no = t ? String(deck.index + 1).padStart(2, '0') : '--';
+  $('lcdSide').textContent = `${side} · ${no} · ${deck.state}`;
+  $('lcdTime').textContent = t ? `${fmt(audio.currentTime || 0)} / ${fmt(t.sec)}` : '0:00 / 0:00';
+  if (t) {
+    $('lcdTitle').textContent = t.title;
+    $('lcdArtist').textContent = t.artist || '알 수 없는 가수';
+  }
+}
+
+/* ===== 시작 ===== */
+function checkEnvironment() {
+  if (location.protocol === 'file:') {
+    return '로컬 서버에서 열어 주세요. 프로젝트 폴더에서 python -m http.server 8000을 실행한 뒤 http://localhost:8000을 엽니다.';
+  }
+  if (!('showDirectoryPicker' in window)) return '이 앱은 크롬이나 엣지 최신 버전에서만 동작합니다. 크롬이나 엣지로 열어 주세요.';
+  return null;
+}
+
+const problem = checkEnvironment();
+if (problem) {
+  $('notice').textContent = problem;
+  $('notice').hidden = false;
+  $('main').hidden = true;
+  $('actions').hidden = true;
+} else {
+  $('openFolder').addEventListener('click', openFolder);
+  $('fileInput').addEventListener('change', (e) => {
+    const files = [...e.target.files].filter((f) => AUDIO_EXT.test(f.name));
+    e.target.value = '';
+    addFiles(files.map((file) => ({ file, path: file.webkitRelativePath || file.name, handle: null })));
+  });
+  window.addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('is-dragging'); });
+  window.addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('is-dragging'); });
+  window.addEventListener('drop', onDrop);
+  $('keyPlay').addEventListener('click', pressPlay);
+  $('keyStop').addEventListener('click', pressStop);
+  $('keyRew').addEventListener('click', () => step(-1));
+  $('keyFf').addEventListener('click', () => step(1));
+  for (const ol of [$('sideA'), $('sideB'), $('libList')]) {
+    ol.addEventListener('click', (e) => {
+      const btn = e.target.closest('.track');
+      if (btn && !btn.disabled) playFrom(ol.dataset.src, Number(btn.dataset.index));
+    });
+  }
+  if (!window.jsmediatags) showMessage('태그 읽기 도구를 불러오지 못해 파일 이름으로 표시합니다.');
+}
 </script>
 </body>
 </html>

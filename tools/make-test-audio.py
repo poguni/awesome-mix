@@ -4,6 +4,7 @@
 - 곡마다 길이·음 높이·ID3 태그가 다르다.
 - 태그 없는 곡 1개(파일 이름으로 "가수 - 제목"을 읽는지 확인용)
 - 하위 폴더 안의 곡 1개(재귀 검색 확인용)
+- 앨범 아트가 든 곡 1개
 """
 import shutil
 import subprocess
@@ -21,18 +22,26 @@ TRACKS = [
     ("Mono Bloom - Afterglow Avenue.mp3", 28, 440, None),
     ("sub/Rewind to You.mp3", 61, 494, {"title": "Rewind to You", "artist": "The Cassette Club", "album": "B-Sides", "date": "1989", "genre": "Rock"}),
 ]
+COVER = {"01-neon-harbor.mp3"}  # 앨범 아트(주황 단색 256px)를 넣을 곡
 
 
 def main():
     if not shutil.which("ffmpeg"):
         print("오류: ffmpeg를 찾을 수 없습니다.")
         return 1
+    OUT.mkdir(exist_ok=True)
+    cover = OUT / "_cover.jpg"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "color=c=0xF2772A:s=256x256",
+                    "-frames:v", "1", str(cover)], check=True)
     for name, seconds, freq, tags in TRACKS:
         path = OUT / name
         path.parent.mkdir(parents=True, exist_ok=True)
         cmd = ["ffmpeg", "-y", "-loglevel", "error",
-               "-f", "lavfi", "-i", f"sine=frequency={freq}:duration={seconds}",
-               "-ac", "2", "-b:a", "128k"]
+               "-f", "lavfi", "-i", f"sine=frequency={freq}:duration={seconds}"]
+        if name in COVER:
+            cmd += ["-i", str(cover), "-map", "0:a", "-map", "1:v", "-c:v", "copy",
+                    "-disposition:v", "attached_pic"]
+        cmd += ["-ac", "2", "-b:a", "128k"]
         if tags:
             cmd += ["-id3v2_version", "3"]
             for key, value in tags.items():
@@ -40,7 +49,8 @@ def main():
         else:
             cmd += ["-map_metadata", "-1", "-write_id3v1", "0", "-id3v2_version", "0"]
         subprocess.run(cmd + [str(path)], check=True)
-        print(f"{name}  {seconds}초  {'태그 있음' if tags else '태그 없음'}")
+        print(f"{name}  {seconds}초  {'태그 있음' if tags else '태그 없음'}{'  앨범 아트' if name in COVER else ''}")
+    cover.unlink()
     print(f"완료: {OUT}")
     return 0
 
