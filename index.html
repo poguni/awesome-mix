@@ -289,6 +289,22 @@ button.track { cursor: pointer; }
 .drawer::backdrop { background: rgba(0, 0, 0, 0.55); }
 .drawer .lib-list { overflow-y: auto; flex: 1; margin: 0 -8px; }
 
+/* 설정 창 */
+.settings {
+  width: min(460px, calc(100vw - 32px)); padding: 24px; border-radius: 22px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--line);
+}
+.settings[open] { display: flex; flex-direction: column; gap: 18px; }
+.settings::backdrop { background: rgba(0, 0, 0, 0.55); }
+.setting-group { display: flex; flex-direction: column; gap: 14px; }
+.setting-group h3 { margin: 0; font-family: 'Archivo Narrow', sans-serif; font-size: 12px; letter-spacing: 0.24em; color: var(--muted); }
+.setting-row { display: grid; grid-template-columns: minmax(0, 1fr) 140px 72px; align-items: center; gap: 12px; font-size: 14px; }
+.setting-row input { width: 100%; accent-color: var(--lcd); }
+.setting-row output { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--lcd); text-align: right; }
+.setting-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; }
+.setting-check input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--lcd); }
+.settings small { display: block; font-size: 12px; color: var(--muted); }
+
 @media (prefers-reduced-motion: reduce) {
   .key, .spine { transition: none; }
 }
@@ -312,7 +328,7 @@ button.track { cursor: pointer; }
       <button type="button" class="btn" id="openLibrary">라이브러리</button>
       <button type="button" class="btn toggle" id="hissToggle" aria-pressed="true"><span class="led" aria-hidden="true"></span>HISS</button>
       <button type="button" class="btn toggle" id="wowToggle" aria-pressed="false"><span class="led" aria-hidden="true"></span>WOW &amp; FLUTTER</button>
-      <button type="button" class="btn btn-round" aria-label="설정" disabled>
+      <button type="button" class="btn btn-round" id="openSettings" aria-label="설정">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
       </button>
     </div>
@@ -417,6 +433,32 @@ button.track { cursor: pointer; }
     <span class="brand-sub">파일·폴더를 창에 끌어다 놓아도 됩니다</span>
   </div>
   <ol class="tracks lib-list" id="libList"></ol>
+</dialog>
+
+<dialog class="settings" id="settingsDialog" aria-labelledby="settingsTitle">
+  <div class="panel-head">
+    <h2 id="settingsTitle">설정</h2>
+    <button type="button" class="btn btn-round" id="closeSettings" aria-label="설정 닫기">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <section class="setting-group" aria-labelledby="tapeSoundTitle">
+    <h3 id="tapeSoundTitle">테이프 소리</h3>
+    <label class="setting-row">
+      <span>히스 양 <small>켜고 끄기는 상단 HISS 버튼</small></span>
+      <input type="range" id="hissLevel" min="0" max="0.03" step="0.001" value="0.008">
+      <output id="hissLevelOut" for="hissLevel"></output>
+    </label>
+    <label class="setting-row">
+      <span>와우·플러터 세기 <small>켜고 끄기는 상단 WOW 버튼</small></span>
+      <input type="range" id="wowDepth" min="0" max="1.2" step="0.05" value="0.6">
+      <output id="wowDepthOut" for="wowDepth"></output>
+    </label>
+    <label class="setting-check">
+      <input type="checkbox" id="toneToggle" checked>
+      <span>톤 색감 <small>고음을 살짝 깎고 약하게 포화시켜 테이프 느낌을 냅니다</small></span>
+    </label>
+  </section>
 </dialog>
 
 <script type="module">
@@ -798,43 +840,156 @@ async function onDrop(e) {
 const audio = new Audio();
 let audioUrl = null; // 지금 곡의 Blob URL 하나만 유지한다
 
+/* 오디오 그래프(PRD 6-2). 음악만 테이프 효과를 거치고, 효과음은 곧장 마스터로 간다.
+   <audio> → 와우 Delay → [톤: Lowpass → 새추레이션 | 그대로] → 볼륨 → 마스터
+   핑크 노이즈 → Highpass → 다이나믹 히스(재생 중에만) → 히스 양 → 볼륨
+   켜고 끌 때는 노드를 다시 잇지 않고 게인·깊이만 부드럽게 바꾼다(튀는 소리 방지) */
+const BASE_DELAY_SEC = 0.010;   // 와우 흔들림의 중심 지연
+const WOW_HZ = 0.5;
+const FLUTTER_HZ = 8;
+const FLUTTER_PER_WOW = 0.01 / 0.6; // 플러터 깊이 0.01ms는 와우 0.6ms에 맞춘 비율로 함께 움직인다
+const TONE_LOWPASS_HZ = 12000;
+const HISS_HIGHPASS_HZ = 3000;
+const HISS_LOOP_SEC = 4;
+const RAMP_SEC = 0.015;          // setTargetAtTime 시간 상수(약 50ms면 거의 다 바뀐다)
+const SFX_VOLUME = 0.5;
+
 const Engine = {
+  ctx: null,
+  nodes: null,
+  settings: { hiss: true, hissLevel: 0.008, wow: false, wowDepthMs: 0.6, tone: true, volume: 0.7 },
+  // AudioContext는 사용자가 처음 클릭·키를 누를 때 만든다(자동 재생 정책)
+  ensure() {
+    if (!this.ctx) this.build();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+  build() {
+    const ctx = (this.ctx = new AudioContext());
+    const master = new GainNode(ctx, { gain: 1 });
+    master.connect(ctx.destination);
+    const volume = new GainNode(ctx, { gain: this.settings.volume });
+    volume.connect(master);
+
+    // 음악: 와우·플러터 → 톤(젖은 길)과 그대로(마른 길)를 섞는다
+    const source = ctx.createMediaElementSource(audio);
+    const wowDelay = new DelayNode(ctx, { delayTime: BASE_DELAY_SEC, maxDelayTime: 0.05 });
+    const wowDepth = new GainNode(ctx, { gain: 0 });
+    const flutterDepth = new GainNode(ctx, { gain: 0 });
+    const wowLfo = new OscillatorNode(ctx, { frequency: WOW_HZ });
+    const flutterLfo = new OscillatorNode(ctx, { frequency: FLUTTER_HZ });
+    wowLfo.connect(wowDepth).connect(wowDelay.delayTime);
+    flutterLfo.connect(flutterDepth).connect(wowDelay.delayTime);
+    wowLfo.start();
+    flutterLfo.start();
+    const lowpass = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: TONE_LOWPASS_HZ, Q: 0.7 });
+    const saturate = new WaveShaperNode(ctx, { curve: saturationCurve(), oversample: '2x' });
+    const toneWet = new GainNode(ctx, { gain: 0 });
+    const toneDry = new GainNode(ctx, { gain: 1 });
+    source.connect(wowDelay);
+    wowDelay.connect(lowpass).connect(saturate).connect(toneWet).connect(volume);
+    wowDelay.connect(toneDry).connect(volume);
+
+    // 히스: 핑크 노이즈 4초 반복
+    const hissSrc = new AudioBufferSourceNode(ctx, { buffer: pinkNoise(ctx, HISS_LOOP_SEC), loop: true });
+    const hissHp = new BiquadFilterNode(ctx, { type: 'highpass', frequency: HISS_HIGHPASS_HZ });
+    const hissRun = new GainNode(ctx, { gain: 0 }); // 다이나믹 히스: 재생 중에만 1
+    const hissGain = new GainNode(ctx, { gain: 0 });
+    hissSrc.connect(hissHp).connect(hissRun).connect(hissGain).connect(volume);
+    hissSrc.start();
+
+    const sfx = new GainNode(ctx, { gain: SFX_VOLUME });
+    sfx.connect(master);
+
+    this.nodes = { volume, wowDepth, flutterDepth, toneWet, toneDry, hissRun, hissGain, sfx };
+    this.apply();
+    this.setRunning(deck.state === 'PLAY');
+  },
+  // 값이 갑자기 바뀌면 "틱" 소리가 나므로 짧게 미끄러지듯 바꾼다
+  glide(param, value) {
+    const t = this.ctx.currentTime;
+    if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(t); else param.cancelScheduledValues(t);
+    param.setTargetAtTime(value, t, RAMP_SEC);
+  },
+  apply() {
+    if (!this.nodes) return;
+    const s = this.settings, n = this.nodes;
+    const wowSec = s.wow ? s.wowDepthMs / 1000 : 0;
+    this.glide(n.wowDepth.gain, wowSec);
+    this.glide(n.flutterDepth.gain, wowSec * FLUTTER_PER_WOW);
+    this.glide(n.toneWet.gain, s.tone ? 1 : 0);
+    this.glide(n.toneDry.gain, s.tone ? 0 : 1);
+    this.glide(n.hissGain.gain, s.hiss ? s.hissLevel : 0);
+    this.glide(n.volume.gain, s.volume);
+  },
+  set(patch) {
+    Object.assign(this.settings, patch);
+    this.apply();
+  },
+  // 다이나믹 히스: 테이프가 헤드를 지날 때(재생 중)만 쉬 소리가 난다
+  setRunning(on) {
+    if (this.nodes) this.glide(this.nodes.hissRun.gain, on ? 1 : 0);
+  },
   load(track) {
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     audioUrl = URL.createObjectURL(track.file);
     audio.src = audioUrl;
   },
-  play() { return audio.play(); },
+  async play() {
+    const ctx = this.ensure();
+    if (ctx.state === 'suspended') await ctx.resume();
+    return audio.play();
+  },
   pause() { audio.pause(); },
   // 곡을 막 바꿨으면 길이를 읽은 뒤에 옮긴다
   seek(sec) {
     if (audio.readyState >= 1) audio.currentTime = sec;
     else audio.addEventListener('loadedmetadata', () => { audio.currentTime = sec; }, { once: true });
   },
-  setVolume(v) { audio.volume = v; },
+  setVolume(v) { this.set({ volume: v }); },
 };
 
-// 효과음: 음원 파일 없이 노이즈 버스트와 짧은 울림으로 합성한다(F-11). 음악과 따로 스피커로 간다.
-const SFX_VOLUME = 0.5;
+// 작은 소리는 그대로 두고 큰 소리만 살짝 누르는 곡선(tanh). 톤을 켜도 음량이 커지지 않는다.
+function saturationCurve() {
+  const n = 2048, curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) curve[i] = Math.tanh((i / (n - 1)) * 2 - 1);
+  return curve;
+}
+
+// 핑크 노이즈(높은음으로 갈수록 약해지는 노이즈, Paul Kellet 방식). 가장 큰 값이 1이 되게 맞춘다.
+function pinkNoise(ctx, seconds) {
+  const buffer = ctx.createBuffer(1, Math.round(ctx.sampleRate * seconds), ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let b0 = 0, b1 = 0, b2 = 0, peak = 0;
+  for (let i = 0; i < data.length; i++) {
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99765 * b0 + white * 0.099046;
+    b1 = 0.963 * b1 + white * 0.2965164;
+    b2 = 0.57 * b2 + white * 1.0526913;
+    data[i] = b0 + b1 + b2 + white * 0.1848;
+    peak = Math.max(peak, Math.abs(data[i]));
+  }
+  for (let i = 0; i < data.length; i++) data[i] /= peak;
+  return buffer;
+}
+
+// 효과음: 음원 파일 없이 노이즈 버스트와 짧은 울림으로 합성한다(F-11). 음악과 따로 마스터로 간다.
 const Sfx = {
   ctx: null,
   out: null,
   noise: null,
   motor: null,
-  // AudioContext는 사용자가 처음 키를 누를 때 만든다(자동 재생 정책)
   ensure() {
-    if (!this.ctx) {
-      this.ctx = new AudioContext();
-      this.out = this.ctx.createGain();
-      this.out.gain.value = SFX_VOLUME;
-      this.out.connect(this.ctx.destination);
+    const ctx = Engine.ensure();
+    if (!this.out) {
+      this.ctx = ctx;
+      this.out = Engine.nodes.sfx;
       // 1초짜리 흰 노이즈를 만들어 두고 돌려 쓴다
-      this.noise = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
+      this.noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       const data = this.noise.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-    return this.ctx;
+    return ctx;
   },
   // 딸깍: 대역을 거른 노이즈가 짧게 사라진다
   click(at, freq, q, level, decay) {
@@ -968,6 +1123,7 @@ function setState(state) {
   deck.state = state;
   $('keyPlay').setAttribute('aria-pressed', String(state === 'PLAY'));
   Reels.setTarget(REEL_RATE[state]); // 릴은 재생·감기 중에만 돈다
+  Engine.setRunning(state === 'PLAY'); // 히스도 재생 중에만(감을 때는 헤드가 떨어져 조용하다)
   Media.update();
   render();
 }
@@ -1554,7 +1710,7 @@ function makeHoldKey(btn, dir) {
 
 // Space: PLAY/STOP, ←/→: REW/FF(누르고 있기), Shift+←/→: 이전·다음 곡, B: 뒤집기, E: 꺼내기
 function bindShortcuts(holdKeys) {
-  const blocked = (e) => e.ctrlKey || e.metaKey || e.altKey || $('libraryDrawer').open
+  const blocked = (e) => e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')
     || e.target.closest?.('input, textarea, select');
   window.addEventListener('keydown', (e) => {
     if (blocked(e)) return;
@@ -1627,13 +1783,39 @@ function bindEvents() {
     const row = e.target.closest('button.track');
     if (row && !row.classList.contains('is-broken')) pickTrack(jcardSide, row.dataset.id);
   });
-  // HISS·WOW는 M4에서 소리와 연결한다(지금은 LED만)
-  for (const id of ['hissToggle', 'wowToggle']) {
-    $(id).addEventListener('click', (e) => {
-      const btn = e.currentTarget;
-      btn.setAttribute('aria-pressed', String(btn.getAttribute('aria-pressed') !== 'true'));
+  // HISS·WOW 토글: LED와 소리를 함께 켜고 끈다
+  for (const [id, key] of [['hissToggle', 'hiss'], ['wowToggle', 'wow']]) {
+    const btn = $(id);
+    btn.setAttribute('aria-pressed', String(Engine.settings[key]));
+    btn.addEventListener('click', () => {
+      const on = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', String(on));
+      Engine.set({ [key]: on });
     });
   }
+  bindSettings();
+}
+
+// 설정 창: 히스 양, 와우·플러터 세기(최대 1.2ms로 제한), 톤 색감
+function bindSettings() {
+  const hiss = $('hissLevel'), wow = $('wowDepth'), tone = $('toneToggle');
+  const show = () => {
+    const level = Number(hiss.value);
+    $('hissLevelOut').textContent = level ? `${Math.round(20 * Math.log10(level))} dB` : '없음';
+    // 피치 흔들림 Δp/p ≈ 2πfA
+    const pitch = 2 * Math.PI * WOW_HZ * (Number(wow.value) / 1000) * 100;
+    $('wowDepthOut').textContent = `±${pitch.toFixed(2)}%`;
+  };
+  hiss.value = Engine.settings.hissLevel;
+  wow.value = Engine.settings.wowDepthMs;
+  tone.checked = Engine.settings.tone;
+  show();
+  hiss.addEventListener('input', () => { Engine.set({ hissLevel: Number(hiss.value) }); show(); });
+  wow.addEventListener('input', () => { Engine.set({ wowDepthMs: Number(wow.value) }); show(); });
+  tone.addEventListener('change', () => Engine.set({ tone: tone.checked }));
+  $('openSettings').addEventListener('click', () => $('settingsDialog').showModal());
+  $('closeSettings').addEventListener('click', () => $('settingsDialog').close());
+  $('settingsDialog').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 }
 
 const problem = checkEnvironment();
