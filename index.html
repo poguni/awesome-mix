@@ -149,7 +149,12 @@ body.is-dragging .app { outline: 2px dashed var(--accent); outline-offset: -8px;
 
 <script type="module">
 const $ = (id) => document.getElementById(id);
-const fmt = (sec) => Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+const pad2 = (n) => String(n).padStart(2, '0');
+// 1시간이 넘으면 h:mm:ss, 아니면 m:ss
+const fmt = (sec) => {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+  return h ? `${h}:${pad2(m)}:${pad2(s)}` : `${m}:${pad2(s)}`;
+};
 const showMessage = (text) => { $('message').textContent = text; };
 
 /* ===== Assets: assets.json 읽기, 이미지 미리 불러오기, 좌표를 %로 변환 ===== */
@@ -204,23 +209,74 @@ function readDuration(file) {
   });
 }
 
+// 옛 태그는 "ISO-8859-1"이라 적고 실제로는 CP949·Shift_JIS 바이트를 넣은 경우가 많다.
+// 바이트로 되돌려 두 인코딩으로 다시 읽고, 한글·가나·한자가 가장 자연스러운 쪽을 고른다.
+const LEGACY_DECODERS = ['euc-kr', 'shift_jis'].map((label) => new TextDecoder(label, { fatal: true }));
+
+// CP949의 확장 영역(두 바이트 중 하나가 0xA1 미만)은 실제로 거의 안 쓰여, 다른 인코딩을 잘못 읽은 흔적이다
+function cp949RareCount(bytes) {
+  let count = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    if (bytes[i] < 0x81) continue;
+    if (bytes[i] < 0xA1 || bytes[i + 1] < 0xA1) count++;
+    i++;
+  }
+  return count;
+}
+
+function cjkScore(text) {
+  let score = 0;
+  for (const ch of text) {
+    const c = ch.codePointAt(0);
+    if ((c >= 0xAC00 && c <= 0xD7A3) || (c >= 0x3041 && c <= 0x30FA)) score += 2; // 한글, 가나
+    else if (c >= 0x4E00 && c <= 0x9FFF) score += 1;                               // 한자
+    else if (c >= 0xFF61 && c <= 0xFF9F) score -= 2;                               // 반각 가나(잘못 읽은 흔적)
+  }
+  return score;
+}
+
+function fixLegacyText(text) {
+  if (!text || !/[\x80-\xFF]/.test(text) || /[^\x00-\xFF]/.test(text)) return text;
+  const bytes = Uint8Array.from(text, (ch) => ch.charCodeAt(0));
+  let best = text, bestScore = 0;
+  for (const decoder of LEGACY_DECODERS) {
+    try {
+      const decoded = decoder.decode(bytes);
+      const score = cjkScore(decoded) - (decoder.encoding === 'euc-kr' ? 3 * cp949RareCount(bytes) : 0);
+      if (score > bestScore) { best = decoded; bestScore = score; }
+    } catch { /* 이 인코딩이 아니다 */ }
+  }
+  return best;
+}
+
 function artUrl(picture) {
   if (!picture?.data?.length) return null;
   return URL.createObjectURL(new Blob([new Uint8Array(picture.data)], { type: picture.format || 'image/jpeg' }));
 }
 
+// 재생하지 못한 m4a가 ALAC(애플 무손실)인지 본다. 크롬·엣지는 ALAC를 재생하지 못한다.
+async function isAlac(file) {
+  if (!/\.(m4a|mp4)$/i.test(file.name)) return false;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  for (let i = 0; i < bytes.length - 3; i++) {
+    if (bytes[i] === 0x61 && bytes[i + 1] === 0x6C && bytes[i + 2] === 0x61 && bytes[i + 3] === 0x63) return true; // "alac"
+  }
+  return false;
+}
+
 async function readTrackInfo(track) {
   const [tags, sec] = await Promise.all([readTags(track.file), readDuration(track.file)]);
   if (tags) {
-    if (tags.title) track.title = tags.title;
-    if (tags.artist) track.artist = tags.artist;
-    track.album = tags.album || '';
+    if (tags.title) track.title = fixLegacyText(tags.title);
+    if (tags.artist) track.artist = fixLegacyText(tags.artist);
+    track.album = fixLegacyText(tags.album || '');
     track.year = parseInt(tags.year, 10) || null;
-    track.genre = tags.genre || '';
+    track.genre = fixLegacyText(tags.genre || '');
     track.art = artUrl(tags.picture);
   }
   track.sec = sec;
   track.broken = sec === 0;
+  if (track.broken && await isAlac(track.file)) track.brokenReason = 'ALAC';
   track.ready = true;
 }
 
@@ -239,7 +295,7 @@ async function addFiles(entries) {
     libraryKeys.add(key);
     const track = {
       id: 't' + String(nextId++).padStart(3, '0'), key, path, file, handle: handle || null,
-      ...parseFileName(file.name), album: '', year: null, genre: '', sec: 0, art: null, ready: false, broken: false,
+      ...parseFileName(file.name), album: '', year: null, genre: '', sec: 0, art: null, ready: false, broken: false, brokenReason: '',
     };
     library.set(track.id, track);
     added.push(track);
@@ -255,8 +311,12 @@ async function addFiles(entries) {
     render();
   });
   if (scan.done === scan.total) {
-    const broken = [...library.values()].filter((t) => t.broken).length;
-    showMessage(`녹음 완료 · ${library.size}곡` + (broken ? ` (읽을 수 없는 파일 ${broken}개)` : ''));
+    const broken = [...library.values()].filter((t) => t.broken);
+    const alac = broken.filter((t) => t.brokenReason === 'ALAC').length;
+    const other = broken.length - alac;
+    showMessage(`녹음 완료 · ${library.size}곡`
+      + (alac ? ` · ALAC(애플 무손실) ${alac}곡은 크롬·엣지에서 재생할 수 없어 건너뜁니다(FLAC로 바꾸면 재생됩니다)` : '')
+      + (other ? ` · 읽을 수 없는 파일 ${other}개` : ''));
     buildDefaultTape();
   }
 }
@@ -367,19 +427,21 @@ function loadIndex(index) {
   deck.index = index;
   deck.ended = false;
   Engine.load(currentTrack());
+  render(); // 재생이 시작되기 전에 LCD·목록부터 바꾼다
 }
 
-function playFrom(src, index) {
+// id를 주면 그 곡부터, 없으면 첫 곡부터
+function playFrom(src, id = null) {
   deck.source = src;
   deck.queue = [...sourceIds(src)];
-  loadIndex(index);
+  loadIndex(id ? Math.max(0, deck.queue.indexOf(id)) : 0);
   startPlayback();
 }
 
 function pressPlay() {
   if (!deck.queue.length) {
-    if (tape.sideA.length) return playFrom('A', 0);
-    if (playableLibrary().length) return playFrom('LIB', 0);
+    if (tape.sideA.length) return playFrom('A');
+    if (playableLibrary().length) return playFrom('LIB');
     showMessage('먼저 폴더를 열거나 음악 파일을 끌어다 놓으세요.');
     return;
   }
@@ -398,7 +460,7 @@ function step(dir) {
   const next = Math.min(deck.queue.length - 1, Math.max(0, deck.index + dir));
   if (next === deck.index) { if (dir < 0) Engine.seek(0); return; }
   loadIndex(next);
-  if (deck.state === 'PLAY') startPlayback(); else render();
+  if (deck.state === 'PLAY') startPlayback();
 }
 
 audio.addEventListener('ended', () => {
@@ -452,13 +514,15 @@ function makeRow() {
 const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
 
 function fillRow(btn, t, i, isCurrent) {
-  btn.dataset.index = i;
+  btn.dataset.id = t.id;
   btn.disabled = t.broken;
   btn.classList.toggle('is-current', isCurrent);
   if (isCurrent) btn.setAttribute('aria-current', 'true'); else btn.removeAttribute('aria-current');
   setText(btn.querySelector('.n'), String(i + 1).padStart(2, '0'));
   setText(btn.querySelector('.t'), t.title);
-  setText(btn.querySelector('.a'), t.broken ? '읽을 수 없는 파일' : t.artist || '알 수 없는 가수');
+  const artist = t.artist || '알 수 없는 가수';
+  setText(btn.querySelector('.a'), !t.broken ? artist
+    : t.brokenReason === 'ALAC' ? artist + ' · ALAC 재생 불가' : '읽을 수 없는 파일');
   setText(btn.querySelector('.d'), t.ready ? fmt(t.sec) : '--:--');
   const art = btn.querySelector('.art');
   if (t.art && !art.firstChild) art.append(Object.assign(document.createElement('img'), { src: t.art, alt: '' }));
@@ -521,7 +585,7 @@ if (problem) {
   for (const ol of [$('sideA'), $('sideB'), $('libList')]) {
     ol.addEventListener('click', (e) => {
       const btn = e.target.closest('.track');
-      if (btn && !btn.disabled) playFrom(ol.dataset.src, Number(btn.dataset.index));
+      if (btn && !btn.disabled) playFrom(ol.dataset.src, btn.dataset.id);
     });
   }
   if (!window.jsmediatags) showMessage('태그 읽기 도구를 불러오지 못해 파일 이름으로 표시합니다.');

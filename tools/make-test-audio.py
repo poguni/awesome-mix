@@ -1,10 +1,12 @@
-"""ffmpeg로 테스트용 짧은 MP3 6곡을 test-audio/에 만든다(git에 올리지 않음).
+"""ffmpeg로 테스트용 짧은 MP3를 test-audio/에 만든다(git에 올리지 않음).
 
 사용법: python tools/make-test-audio.py
 - 곡마다 길이·음 높이·ID3 태그가 다르다.
 - 태그 없는 곡 1개(파일 이름으로 "가수 - 제목"을 읽는지 확인용)
 - 하위 폴더 안의 곡 1개(재귀 검색 확인용)
 - 앨범 아트가 든 곡 1개
+- legacy/: 한국어·일본어를 CP949·Shift_JIS로 적은 옛 태그 곡 3개와 정상 서유럽어 곡 1개
+- formats/: ALAC(.m4a)와 FLAC 무손실 곡
 """
 import shutil
 import subprocess
@@ -23,6 +25,33 @@ TRACKS = [
     ("sub/Rewind to You.mp3", 61, 494, {"title": "Rewind to You", "artist": "The Cassette Club", "album": "B-Sides", "date": "1989", "genre": "Rock"}),
 ]
 COVER = {"01-neon-harbor.mp3"}  # 앨범 아트(주황 단색 256px)를 넣을 곡
+
+# 옛 태그 프로그램처럼 "ISO-8859-1"이라 적고 실제로는 다른 인코딩 바이트를 넣은 곡
+# (파일 경로, 길이(초), 주파수(Hz), 실제 인코딩, 프레임)
+LEGACY = [
+    ("legacy/sakuranbo-cp949.mp3", 12, 523, "cp949", {"TIT2": "さくらんぼ", "TPE1": "大塚愛", "TALB": "愛 am BEST"}),
+    ("legacy/spring-cp949.mp3", 11, 554, "cp949", {"TIT2": "봄날은 간다", "TPE1": "김윤아"}),
+    ("legacy/yakusoku-sjis.mp3", 13, 587, "shift_jis", {"TIT2": "約束", "TPE1": "大塚ちひろ"}),
+    ("legacy/cafe-latin1.mp3", 10, 659, "latin-1", {"TIT2": "Café del Mar", "TPE1": "Beyoncé"}),  # 바뀌면 안 되는 곡
+]
+
+# 코덱 확인용 무손실 곡: ALAC(크롬 재생 불가), FLAC(재생 가능)
+# (파일 경로, 길이(초), 주파수(Hz), 코덱 옵션, 태그)
+FORMATS = [
+    ("formats/lossless-alac.m4a", 9, 698, ["-c:a", "alac", "-sample_fmt", "s16p"], {"title": "Lossless ALAC", "artist": "Codec Lab"}),
+    ("formats/lossless.flac", 8, 740, ["-c:a", "flac", "-sample_fmt", "s16"], {"title": "Lossless FLAC", "artist": "Codec Lab"}),
+]
+
+
+def legacy_id3(frames, codec):
+    """인코딩 바이트를 0(ISO-8859-1)으로 적은 ID3v2.3 태그를 만든다."""
+    body = b""
+    for frame_id, text in frames.items():
+        data = b"\x00" + text.encode(codec)
+        body += frame_id.encode() + len(data).to_bytes(4, "big") + b"\x00\x00" + data
+    size = len(body)
+    syncsafe = bytes([(size >> 21) & 0x7F, (size >> 14) & 0x7F, (size >> 7) & 0x7F, size & 0x7F])
+    return b"ID3\x03\x00\x00" + syncsafe + body
 
 
 def main():
@@ -51,6 +80,23 @@ def main():
         subprocess.run(cmd + [str(path)], check=True)
         print(f"{name}  {seconds}초  {'태그 있음' if tags else '태그 없음'}{'  앨범 아트' if name in COVER else ''}")
     cover.unlink()
+    for name, seconds, freq, codec, frames in LEGACY:
+        path = OUT / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"sine=frequency={freq}:duration={seconds}",
+                        "-ac", "2", "-b:a", "128k", "-map_metadata", "-1", "-write_id3v1", "0", "-id3v2_version", "0",
+                        str(path)], check=True)
+        path.write_bytes(legacy_id3(frames, codec) + path.read_bytes())
+        print(f"{name}  {seconds}초  옛 태그({codec})")
+    for name, seconds, freq, codec_args, tags in FORMATS:
+        path = OUT / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"sine=frequency={freq}:duration={seconds}",
+               "-ac", "2", "-ar", "44100", *codec_args]
+        for key, value in tags.items():
+            cmd += ["-metadata", f"{key}={value}"]
+        subprocess.run(cmd + [str(path)], check=True)
+        print(f"{name}  {seconds}초  {codec_args[1].upper()}")
     print(f"완료: {OUT}")
     return 0
 
