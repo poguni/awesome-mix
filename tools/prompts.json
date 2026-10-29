@@ -30,6 +30,12 @@
       "needs_ref": "IMG-01",
       "prompt": "Use the attached image only as a reference for materials, color palette, lighting direction and camera angle. Do not copy its shape and do not include the attached object in the result. Create a new, separate image of: a standard compact audio cassette tape seen exactly from the front, lying perfectly flat. The shell is dark brownish-black matte plastic (#24221F) with five small recessed screws. The upper area has a smooth, flat, slightly recessed empty rectangle where a label would go, with no paper label on it. In the center there is a clear rectangular window, and two round hub holes show two white plastic reel hubs with only a very thin ring of brown tape on each, as if nearly empty. At the bottom center there is a trapezoid ridge with two small round holes and a strip of exposed brown tape. True cassette proportions of about 100 by 64 millimeters."
     },
+    "IMG-04-wide": {
+      "title": "카세트 셸(데크 칸 비율 1.8:1, 창·허브 구멍 비움, AI 원본 셸을 참고 이미지로)",
+      "aspect": "16:9",
+      "needs_ref": "cassette-shell-backup1",
+      "prompt": "Use the attached image only as a reference for materials, color, screws, surface details, lighting direction and camera angle. Do not copy its proportions. Create a new, separate image of: an empty compact audio cassette shell seen exactly from the front, lying perfectly flat. Its outline is a wide rectangle with slightly rounded corners whose width is exactly 1.8 times its height; it is wider and flatter than a standard cassette, but drawn naturally, not stretched. The shell is dark brownish-black matte plastic (#24221F) with five small recessed screws. The upper part has a smooth, flat, slightly recessed empty rectangle where a label would go, with no paper label on it. Two perfectly circular hub holes of the same size are centered at 28.5 percent and 71.5 percent of the shell width, both at 46 percent of the shell height measured from the top edge. Between them is one simple straight-edged rectangular window. The window and both hub holes are completely see-through and empty, with no reels, no hubs and no tape inside, so only the same plain light-grey background shows through them. At the bottom center there is a trapezoid ridge with two small round holes and a strip of exposed brown tape."
+    },
     "IMG-05": {
       "title": "빈 라벨 종이",
       "aspect": "21:9",
@@ -110,6 +116,12 @@
       "title": "수정: 색을 지정 값에 맞추기",
       "needs_ref": "어긋난",
       "prompt": "Using the attached image as the exact reference, keep the same object, size, position in the frame, camera angle, lighting and background. Change only the following: match the colors exactly to these values: graphite body #1C1B1A, aluminum bezel #9A9EA4, dark keys #232328, all orange parts #F2772A, cassette shell #24221F, label paper #EFE6D2, headband steel #8E9298. Keep the material finishes the same."
+    },
+    "FIX-holes": {
+      "title": "수정: 셸의 허브 구멍을 정원으로, 창·구멍을 비우기",
+      "edit": true,
+      "needs_ref": "IMG-04-wide",
+      "prompt": "make the two hub holes perfect circles of exactly the same size, and make the rectangular window and both hub holes completely see-through and empty, with no reels, no hubs and no tape inside, so only the plain light-grey background shows through them. Do not change the outline, proportions, screws, label area or any other part of the shell."
     },
     "FIX-keys": {
       "title": "수정: 본체의 키·버튼을 긴 홈 하나로",

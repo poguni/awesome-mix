@@ -94,7 +94,7 @@ AI로 생성할 이미지는 필수 6장(IMG-01·02·04·05·06·08)입니다. I
 | IMG-01 | `deck/deck-bay@2x.webp` | 덮개가 없는 데크 본체 정면. 위쪽은 빈 카세트 칸(헤드·캐스턴·핀치롤러·릴 스핀들 2개), 아래쪽은 빈 LCD 창과 키가 들어갈 긴 홈 하나 | 4:3 | 2048×1536 | 본체 바깥 | 새로 생성 | 필수 |
 | IMG-02 | `_work/deck-closed.png` | IMG-01과 같은 본체에 덮개(연기색 유리창 달린 테두리)를 닫은 모습. 앱에는 쓰지 않는 작업용 | 4:3 | — | — | IMG-01 편집 | 필수 |
 | IMG-03 | `deck/deck-lid@2x.webp` | IMG-02에서 덮개 테두리만 오려낸 것. IMG-01과 같은 캔버스 크기·위치 | — | 2048×1536 | 덮개 바깥, 유리창 | IMG-02 오려내기 | 필수 |
-| IMG-04 | `cassette/cassette-shell@2x.webp` | 카세트테이프 정면. 라벨 자리는 매끈한 빈 면, 가운데 투명창, 허브 구멍 2개, 나사 5개, 아래 사다리꼴 테이프 노출부 | 3:2 | 1260×800 | 바깥, 창, 허브 구멍 | 새로 생성 | 필수 |
+| IMG-04 | `cassette/cassette-shell@2x.webp` | 카세트테이프 정면. 라벨 자리는 매끈한 빈 면, 가운데 투명창, 허브 구멍 2개, 나사 5개, 아래 사다리꼴 테이프 노출부. **몸체 비율은 데크 칸(`deck.bay`)과 같은 약 1.8:1**(아래 "IMG-04-wide" 참고) | 16:9 | 몸체 폭 약 1260 | 바깥, **창, 허브 구멍(반드시)** | 새로 생성(IMG-04-wide) | 필수 |
 | IMG-05 | `cassette/cassette-label@2x.webp` | 아무것도 안 쓴 아이보리 라벨 종이, 연한 가로줄 3개, 종이 결 | 21:9 | 1110×240 | 바깥 | 새로 생성 | 필수 |
 | IMG-06 | `deck/key-*@2x.webp`(4개로 자동 분할) | 기호가 없는 키 4개가 한 줄로 놓인 모습, 모두 올라온 상태. 두 번째만 주황(PLAY), 나머지는 그래파이트. 위·아래 여백이 넓어야 함 | 21:9 | 키마다 약 400×630 | 바깥, 그림자 | 새로 생성 → prep.py 자동 자르기 | 필수 |
 | IMG-08 | `deck/headphones@2x.webp` | 은색 헤드밴드에 주황 폼 이어패드 2개가 달린 헤드폰 정면 | 3:2 | 1200×800 | 바깥 | 새로 생성 | 필수 |
@@ -162,6 +162,26 @@ Studio product photograph, straight-on front orthographic view with zero tilt, l
 Use the attached image only as a reference for materials, color palette, lighting direction and camera angle. Do not copy its shape and do not include the attached object in the result. Create a new, separate image of: a standard compact audio cassette tape seen exactly from the front, lying perfectly flat. The shell is dark brownish-black matte plastic (#24221F) with five small recessed screws. The upper area has a smooth, flat, slightly recessed empty rectangle where a label would go, with no paper label on it. In the center there is a clear rectangular window, and two round hub holes show two white plastic reel hubs with only a very thin ring of brown tape on each, as if nearly empty. At the bottom center there is a trapezoid ridge with two small round holes and a strip of exposed brown tape. True cassette proportions of about 100 by 64 millimeters. 3:2 aspect ratio.
 Studio product photograph, straight-on front orthographic view with zero tilt, long telephoto lens so there is no perspective distortion, everything in sharp focus. Soft softbox key light from the top-left at 45 degrees with a faint fill light from the right. Plain flat light-grey background (#E6E6E6) with no floor shadow and no reflection. The object is centered and fills only about 70 percent of the frame, leaving generous empty margin on every side. Photorealistic materials, subtle micro-scratches, no logos, no text, no letters, no numbers, no brand marks, no hands, no props.
 ```
+
+### IMG-04-wide 카세트 셸(데크 칸 비율에 맞춘 판, 권장)
+
+처음 만든 셸은 실제 카세트 비율(약 1.57:1)이라, 그보다 납작한 데크 칸(약 1.8:1)에 맞추려고 세로로 누르면 허브 구멍이 타원이 됩니다. 그래서 **처음부터 칸 비율로 그리게** 하고, 창과 허브 구멍은 **비어서 배경이 비치게** 그리게 해 오려내기 쉽게 합니다. `tools/prompts.json`의 `IMG-04-wide`이며, 지난번 AI 셸을 참고 이미지로 붙여 재질과 색을 맞춥니다.
+
+```bash
+python3 tools/gen.py IMG-04-wide --ref assets/cassette/cassette-shell-backup1.webp --count 3
+```
+
+| 조건 | 값 | 이유 |
+| --- | --- | --- |
+| 몸체 비율 | 가로 1.8 : 세로 1 | 데크 칸 `deck.bay`(1112×617)와 같은 비율. 누르거나 늘이지 않아도 칸에 맞는다 |
+| 허브 구멍 중심 | 몸체 폭의 28.5%·71.5%, 높이의 약 46% | 몸체가 칸 폭에 맞을 때 데크 스핀들 위에 온다(스핀들 간격 = 칸 폭의 43.1%) |
+| 허브 구멍 모양 | 크기가 같은 정원 | 코드가 그리는 허브·감긴 테이프는 원이라, 구멍도 원이어야 테두리와 맞는다 |
+| 창·허브 구멍 속 | 비어 있고 배경 회색이 비침 | 배경을 지울 때 함께 지워져 투명해진다 |
+
+확인할 점:
+- 허브 구멍이 타원이거나 안에 릴이 그려져 나오면 `FIX-holes`(편집)로 고칩니다. AI가 위치를 정확히 맞추지 못해도 calibrate의 "허브에 맞추기"가 크기와 위치를 맞춥니다.
+- 오려낸 뒤 **창과 허브 구멍이 완전히 투명(알파 0)**해야 합니다. 불투명하면 그 아래에서 도는 허브와 감긴 테이프가 보이지 않습니다. `python tools/check-assets.py`가 이를 검사합니다.
+- 새 셸을 넣은 뒤에는 calibrate의 카세트 탭에서 `labelArea`·`window`·`hubs`·`packMaxRadius`를 다시 표시하고, 합성 확인 탭에서 "허브에 맞추기"를 누릅니다. 코드는 고치지 않아도 됩니다.
 
 ### IMG-05 빈 라벨 종이
 
@@ -296,7 +316,7 @@ Studio product photograph, straight-on front orthographic view with zero tilt, l
 2. **2배 확대**: Upscayl에서 배율 2배, 출력 PNG로 확대합니다. IMG-01과 IMG-02는 같은 모델·같은 설정으로 확대해야 픽셀 위치가 맞습니다.
 3. **배경 제거**: 자동 배경 제거는 은색 테두리의 광택을 배경으로 착각해 지워 버립니다. 데크 본체·카세트·라벨처럼 모양이 둥근 사각형인 물체는 Photoshop의 펜 도구나 모서리가 둥근 사각형 도구로 윤곽을 따고, 선택 영역으로 바꿔 레이어 마스크를 만듭니다(삭제 대신 마스크). 가장자리는 마스크 속성에서 페더 0.5~1px로 다듬습니다. 헤드폰처럼 곡선이 많은 물체는 ‘피사체 선택’ 후 ‘선택 및 마스크’로 손봐도 됩니다. 지운 뒤에는 어두운 색(#0D0D0E) 레이어를 밑에 깔아 테두리 광택이 남아 있는지 확인합니다. 키(IMG-06)는 배경을 지우지 않아도 prep.py가 배경과 그림자까지 함께 처리합니다. 워터마크는 배경 위에 있으므로 이때 함께 사라집니다.
 4. **덮개 오려내기(IMG-03)**: IMG-02를 열고, 덮개 테두리 바깥을 모두 지웁니다. 이어서 유리창 안쪽을 사각형 선택으로 지워 투명하게 만듭니다. **캔버스는 자르지 않고** IMG-01과 같은 2048×1536으로 둡니다.
-5. **카세트 오려내기(IMG-04)**: 가운데 창은 사각형 선택, 허브 구멍 2개는 원형 선택(Shift를 누른 채 끌어 정원)으로 지웁니다. 두 구멍의 중심 좌표를 기록합니다(7장).
+5. **카세트 오려내기(IMG-04)**: 가운데 창은 사각형 선택, 허브 구멍 2개는 원형 선택(Shift를 누른 채 끌어 정원)으로 지웁니다. IMG-04-wide처럼 창·구멍 속이 배경 회색이면 배경을 지울 때 함께 지워지므로, 남은 부분만 다듬습니다. 두 구멍의 중심 좌표를 기록합니다(7장). **셸을 세로나 가로로 늘이거나 누르지 않습니다.** 비율이 칸과 다르면 다시 생성합니다(누르면 허브 구멍이 타원이 됩니다).
 6. **정렬 검사**: IMG-01 위에 IMG-03을 올리고 혼합 모드를 "차이"로 바꿉니다. 덮개 경첩과 본체 가장자리가 거의 검게 보여야 합니다. 어긋나면 이동 도구로 맞추거나 IMG-02를 다시 생성합니다.
 7. **자르기**: 데크 레이어(IMG-01·03)를 빼고, 4장 표의 최종 크기로 자릅니다. 키는 직접 자르지 않고 아래 ‘키 자동 자르기’로 처리합니다.
 8. **색 보정**: 스포이드로 PLAY 키와 헤드폰 폼을 찍어 보고, 서로 다르면 색조·채도로 #F2772A 근처에 맞춥니다.

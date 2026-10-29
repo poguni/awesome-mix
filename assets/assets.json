@@ -42,15 +42,15 @@
   "cassette": {
     "image": "cassette/cassette-shell.webp",
     "label": "cassette/cassette-label.webp",
-    "size": [1260, 800],
-    "labelArea": [225, 170, 817, 127],
-    "window": [515, 332, 232, 100],
+    "size": [1260, 844],
+    "labelArea": [180, 125, 900, 145],
+    "window": [495, 325, 270, 141],
     "hubs": {
-      "left": [413, 385, 47],
-      "right": [847, 385, 47]
+      "left": [378, 396, 57],
+      "right": [881, 395, 57]
     },
-    "packMaxRadius": 194,
-    "seatInBay": [328, 167, 1391, 883]
+    "packMaxRadius": 225,
+    "seatInBay": [424, 214, 1200, 804]
   },
   "headphones": {
     "image": "deck/headphones.webp",

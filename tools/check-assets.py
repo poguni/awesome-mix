@@ -59,7 +59,7 @@ def main():
     lid = check_file(get(data, "deck.lid.image"), "deck.lid.image")
     for key in ("rew", "play", "stop", "ff"):
         check_file(get(data, f"keys.files.{key}"), f"keys.files.{key}")
-    check_file(get(data, "cassette.image"), "cassette.image")
+    shell = check_file(get(data, "cassette.image"), "cassette.image")
     check_file(get(data, "cassette.label"), "cassette.label")
     check_file(get(data, "headphones.image"), "headphones.image")
     for key, value in (get(data, "optional") or {}).items():
@@ -91,17 +91,38 @@ def main():
             if max(abs(dx), abs(dy)) > HUB_TOLERANCE:
                 warnings.append(f"{side} 허브가 스핀들에서 ({dx:+.0f}, {dy:+.0f})px 어긋납니다. calibrate의 '허브에 맞추기'를 눌러 주세요")
 
-    # 덮개 유리창 투명 여부(카세트 칸 가운데를 본다)
+    # 이미지 투명 영역 검사(Pillow 필요)
     bay = get(data, "deck.bay")
-    if lid and bay:
-        try:
-            from PIL import Image
-            alpha = Image.open(lid).convert("RGBA").getchannel("A")
-            cx, cy = bay[0] + bay[2] // 2, bay[1] + bay[3] // 2
-            if alpha.getpixel((cx, cy)) >= 250:
-                warnings.append("deck-lid 유리창이 불투명합니다. 덮개를 닫으면 카세트가 보이지 않습니다")
-        except ImportError:
-            warnings.append("Pillow가 없어 덮개 유리창 검사를 건너뜁니다")
+    try:
+        from PIL import Image
+    except ImportError:
+        Image = None
+        warnings.append("Pillow가 없어 덮개·셸 투명 영역 검사를 건너뜁니다")
+
+    # 덮개 유리창 투명 여부(카세트 칸 가운데를 본다)
+    if Image and lid and bay:
+        alpha = Image.open(lid).convert("RGBA").getchannel("A")
+        cx, cy = bay[0] + bay[2] // 2, bay[1] + bay[3] // 2
+        if alpha.getpixel((cx, cy)) >= 250:
+            warnings.append("deck-lid 유리창이 불투명합니다. 덮개를 닫으면 카세트가 보이지 않습니다")
+
+    # 셸의 허브 구멍·창 투명 여부, 몸체 비율
+    if Image and shell and not errors:
+        alpha = Image.open(shell).convert("RGBA").getchannel("A")
+        spots = {f"{side} 허브 구멍": get(data, f"cassette.hubs.{side}")[:2] for side in ("left", "right")}
+        wx, wy, ww, wh = get(data, "cassette.window")
+        spots["창"] = (wx + ww // 2, wy + wh // 2)
+        opaque = [name for name, (x, y) in spots.items() if alpha.getpixel((int(x), int(y))) >= 250]
+        if opaque:
+            warnings.append(f"cassette-shell의 {', '.join(opaque)}이(가) 불투명합니다. "
+                            "그 아래에서 도는 허브와 감긴 테이프가 보이지 않으니 투명하게 오려 내 주세요")
+        box = alpha.point(lambda v: 255 if v > 10 else 0).getbbox()
+        if box and bay:
+            body = (box[2] - box[0]) / (box[3] - box[1])
+            slot = bay[2] / bay[3]
+            if abs(body - slot) / slot > 0.05:
+                warnings.append(f"cassette-shell 몸체 비율 {body:.2f}:1이 데크 칸 비율 {slot:.2f}:1과 다릅니다. "
+                                "칸보다 큰 부분은 잘려 보입니다(셸을 늘이거나 누르지 말고 칸 비율로 다시 만드는 것을 권합니다)")
 
     for msg in errors:
         print("오류:", msg)
