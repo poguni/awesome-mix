@@ -105,6 +105,7 @@ body.is-dragging .app { outline: 2px dashed var(--accent); outline-offset: -8px;
 .deck--image .bay-clip { position: absolute; inset: 0; }
 .cassette { position: absolute; container-type: inline-size; }
 .cassette > * { position: absolute; }
+.cassette > .layer { filter: var(--shell-filter, none); } /* 테이프 종류별 셸 색감(F-33) */
 .pack {
   border-radius: 50%;
   background: var(--pack-img, repeating-radial-gradient(circle, #2B1B12 0 1.5px, #3A2519 1.5px 3px)) center / cover;
@@ -361,6 +362,7 @@ button.track { cursor: pointer; }
 
 /* J카드 머리 */
 .jcard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.jcard-actions { display: flex; gap: 6px; flex: none; }
 .jcard .btn { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, var(--paper)); }
 
 /* 테이프 편집기 */
@@ -476,7 +478,7 @@ button.track { cursor: pointer; }
   <main id="main" class="main">
     <div class="row">
       <section class="panel panel-wide deck-panel" aria-label="테이프 데크">
-        <div class="deck-caption">AUTO REVERSE · TYPE II CHROME · 2 HEAD</div>
+        <div class="deck-caption" id="deckCaption">AUTO REVERSE · TYPE II CHROME · 2 HEAD</div>
         <div class="deck-well" id="deckWell">
           <div class="deck" id="deck"></div>
         </div>
@@ -518,7 +520,10 @@ button.track { cursor: pointer; }
             <div class="jcard-kicker" id="jcardKicker">J-CARD · C90</div>
             <h2 class="jcard-title" id="jcardTitle">빈 테이프</h2>
           </div>
-          <button type="button" class="btn btn-small jcard-edit" id="editTape" aria-label="이 테이프 편집" hidden>편집</button>
+          <div class="jcard-actions">
+            <button type="button" class="btn btn-small" id="saveJcard" aria-label="인쇄용 J카드 PNG로 저장" hidden>J카드 저장</button>
+            <button type="button" class="btn btn-small jcard-edit" id="editTape" aria-label="이 테이프 편집" hidden>편집</button>
+          </div>
         </div>
         <div class="side-tabs" role="tablist" aria-label="테이프 면">
           <button type="button" role="tab" id="tabA" aria-selected="true" aria-controls="jcardList">SIDE A</button>
@@ -614,6 +619,9 @@ button.track { cursor: pointer; }
         <option value="C60">C60 · 면당 30분</option>
         <option value="C90">C90 · 면당 45분</option>
       </select>
+    </label>
+    <label class="ed-field">종류
+      <select id="edType"></select>
     </label>
     <fieldset class="ed-field ed-colors" id="edColors"><legend>색</legend></fieldset>
     <div class="ed-palette" id="edPalette" hidden></div>
@@ -716,6 +724,16 @@ button.track { cursor: pointer; }
       <label><input type="radio" name="sideBasis" value="songs"> 곡 길이 합계 <small>면의 마지막 곡이 끝나면 오른쪽 릴이 가득 찹니다</small></label>
       <label><input type="radio" name="sideBasis" value="tape"> 실제 테이프 길이 <small>C60이면 면당 30분. 곡이 끝나도 테이프가 남습니다</small></label>
     </fieldset>
+  </section>
+  <section class="setting-group" aria-labelledby="backupTitle">
+    <h3 id="backupTitle">선반 백업</h3>
+    <p class="brand-sub">테이프 구성을 JSON 파일로 저장하고 불러옵니다. 음원은 들어가지 않으며, 가져올 때는 열어 둔 폴더에서 같은 곡을 찾습니다.</p>
+    <div class="setting-actions">
+      <span class="brand-sub" id="backupState" role="status"></span>
+      <button type="button" class="btn btn-small" id="importTapes">가져오기</button>
+      <button type="button" class="btn btn-small" id="exportTapes">내보내기</button>
+      <input type="file" id="importInput" accept=".json,application/json" hidden>
+    </div>
   </section>
   <section class="setting-group" aria-labelledby="aiSettingTitle">
     <h3 id="aiSettingTitle">AI 큐레이터(OpenRouter)</h3>
@@ -1399,7 +1417,8 @@ async function onDrop(e) {
 
 /* ===== Engine: AudioContext, 재생·이동, 히스·와우, 효과음 합성 ===== */
 const audio = new Audio();
-let audioUrl = null; // 지금 곡의 Blob URL 하나만 유지한다
+const audioUrls = new Map(); // 곡 id → { file, url }. 지금 곡과 다음 곡 것만 둔다(7장 메모리)
+const preloader = Object.assign(new Audio(), { preload: 'auto', muted: true }); // 다음 곡을 미리 읽어 둔다
 
 /* 오디오 그래프(PRD 6-2). 음악만 테이프 효과를 거치고, 효과음은 곧장 마스터로 간다.
    <audio> → 와우 Delay → [톤: Lowpass → 새추레이션 | 그대로] → 볼륨 → 마스터
@@ -1414,6 +1433,15 @@ const HISS_HIGHPASS_HZ = 3000;
 const HISS_LOOP_SEC = 4;
 const RAMP_SEC = 0.015;          // setTargetAtTime 시간 상수(약 50ms면 거의 다 바뀐다)
 const SFX_VOLUME = 0.5;
+
+// 테이프 종류(F-33): 히스 양 배율, 톤 로패스 주파수, 카세트 셸 색감을 묶는다. 크롬이 지금까지의 기본 소리다.
+const TAPE_TYPES = {
+  normal: { name: 'TYPE I NORMAL', label: '노멀 · 히스 많고 따뜻함', hiss: 1.6, lowpass: 9500, shell: 'sepia(0.55) saturate(1.3) brightness(1.15)' },
+  chrome: { name: 'TYPE II CHROME', label: '크롬 · 기본', hiss: 1, lowpass: TONE_LOWPASS_HZ, shell: 'none' },
+  metal: { name: 'TYPE IV METAL', label: '메탈 · 히스 적고 맑음', hiss: 0.55, lowpass: 16000, shell: 'grayscale(1) brightness(2.1) contrast(0.85)' },
+};
+const DEFAULT_TAPE_TYPE = 'chrome';
+const tapeType = (tape) => TAPE_TYPES[tape?.type] || TAPE_TYPES[DEFAULT_TAPE_TYPE];
 
 const Engine = {
   ctx: null,
@@ -1462,7 +1490,7 @@ const Engine = {
     const sfx = new GainNode(ctx, { gain: SFX_VOLUME });
     sfx.connect(master);
 
-    this.nodes = { volume, wowDepth, flutterDepth, toneWet, toneDry, hissRun, hissGain, sfx };
+    this.nodes = { volume, wowDepth, flutterDepth, lowpass, toneWet, toneDry, hissRun, hissGain, sfx };
     this.apply();
     this.setRunning(deck.state === 'PLAY');
   },
@@ -1475,12 +1503,14 @@ const Engine = {
   apply() {
     if (!this.nodes) return;
     const s = this.settings, n = this.nodes;
+    const type = tapeType(deckTape()); // 데크에 든 테이프의 종류(없으면 크롬)
     const wowSec = s.wow ? s.wowDepthMs / 1000 : 0;
     this.glide(n.wowDepth.gain, wowSec);
     this.glide(n.flutterDepth.gain, wowSec * FLUTTER_PER_WOW);
+    this.glide(n.lowpass.frequency, type.lowpass);
     this.glide(n.toneWet.gain, s.tone ? 1 : 0);
     this.glide(n.toneDry.gain, s.tone ? 0 : 1);
-    this.glide(n.hissGain.gain, s.hiss ? s.hissLevel : 0);
+    this.glide(n.hissGain.gain, s.hiss ? s.hissLevel * type.hiss : 0);
     this.glide(n.volume.gain, s.volume);
   },
   set(patch) {
@@ -1492,10 +1522,21 @@ const Engine = {
   setRunning(on) {
     if (this.nodes) this.glide(this.nodes.hissRun.gain, on ? 1 : 0);
   },
-  load(track) {
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    audioUrl = URL.createObjectURL(track.file);
-    audio.src = audioUrl;
+  load(track, next = null) {
+    const keep = [track, next].filter((t) => t?.file);
+    for (const t of keep) {
+      const had = audioUrls.get(t.id);
+      if (had?.file === t.file) continue;
+      if (had) URL.revokeObjectURL(had.url); // 다시 찾기 등으로 파일이 바뀌었다
+      audioUrls.set(t.id, { file: t.file, url: URL.createObjectURL(t.file) });
+    }
+    for (const [id, { url }] of audioUrls) {
+      if (!keep.some((t) => t.id === id)) { URL.revokeObjectURL(url); audioUrls.delete(id); }
+    }
+    audio.src = audioUrls.get(track.id).url;
+    // 다음 곡을 미리 읽어 두면 곡이 바뀔 때 파일을 여는 시간이 줄어든다
+    if (next?.file) preloader.src = audioUrls.get(next.id).url;
+    else if (preloader.src) { preloader.removeAttribute('src'); preloader.load(); }
   },
   async play() {
     const ctx = this.ensure();
@@ -1652,7 +1693,7 @@ const currentTrack = () => library.get(deck.queue[deck.index]);
 function newTape(fields) {
   return {
     id: 'tape-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    title: '새 테이프', length: 'C90', color: TAPE_COLORS[0].color, ink: TAPE_COLORS[0].ink, sideA: [], sideB: [],
+    title: '새 테이프', length: 'C90', type: DEFAULT_TAPE_TYPE, color: TAPE_COLORS[0].color, ink: TAPE_COLORS[0].ink, sideA: [], sideB: [],
     resume: null, made: 'manual', order: shelfTapes.reduce((m, t) => Math.max(m, t.order), -1) + 1, ...fields,
   };
 }
@@ -1733,7 +1774,7 @@ async function startPlayback() {
 function loadIndex(index) {
   deck.index = index;
   deck.ended = false;
-  Engine.load(currentTrack());
+  Engine.load(currentTrack(), library.get(deck.queue[index + 1]));
   Media.update();
   render(); // 재생이 시작되기 전에 LCD·목록부터 바꾼다
 }
@@ -2374,6 +2415,86 @@ function renderShelf() {
   if (list.length !== shelf.children.length || list.some((s, i) => shelf.children[i] !== s)) shelf.replaceChildren(...list);
 }
 
+/* --- 내보내기·가져오기(F-45): 음원 없이 곡 정보만 담고, 가져올 때 라이브러리에서 같은 곡을 찾는다 --- */
+const BACKUP_APP = 'awesome-mix';
+const baseName = (path) => path.split('/').pop();
+const sameText = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+
+function exportTapes() {
+  const ref = (id) => {
+    const t = library.get(id);
+    if (!t) return null;
+    return { folder: roots.get(t.rootId)?.name || '', path: t.path, file: baseName(t.path), size: t.size, title: t.title, artist: t.artist, sec: Math.round(t.sec) };
+  };
+  const side = (tape, ids) => ids.map((id) => {
+    const r = ref(id);
+    if (r && tape.reasons?.[id]) r.reason = tape.reasons[id];
+    return r;
+  }).filter(Boolean);
+  const data = {
+    app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(),
+    tapes: shelfOrder().map((t) => ({ title: t.title, length: t.length, type: t.type || DEFAULT_TAPE_TYPE, color: t.color, made: t.made, sideA: side(t, t.sideA), sideB: side(t, t.sideB) })),
+  };
+  const a = el('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  a.download = `awesome-mix-tapes-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  setText($('backupState'), `테이프 ${data.tapes.length}개를 내보냈습니다.`);
+}
+
+// 같은 폴더·경로 → 같은 경로 → 파일 이름+크기 → 제목+가수 순서로 찾는다(임시 곡은 새로 고침하면 사라지므로 뺀다)
+function findTrack(r, pool) {
+  return pool.find((t) => t.path === r.path && (roots.get(t.rootId)?.name || '') === r.folder)
+    || pool.find((t) => t.path === r.path)
+    || pool.find((t) => baseName(t.path) === r.file && t.size === r.size)
+    || pool.find((t) => sameText(t.title, r.title) && sameText(t.artist, r.artist))
+    || null;
+}
+
+async function importTapes(file) {
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+    if (data?.app !== BACKUP_APP || !Array.isArray(data.tapes)) throw new Error();
+  } catch {
+    setText($('backupState'), 'Awesome Mix에서 내보낸 테이프 파일이 아닙니다.');
+    return;
+  }
+  const pool = [...library.values()].filter((t) => !t.temp && !t.broken);
+  if (!pool.length) { setText($('backupState'), '먼저 폴더를 열어 곡을 불러온 뒤 가져와 주세요.'); return; }
+  let added = 0, missing = 0, empty = 0;
+  for (const raw of data.tapes) {
+    const used = new Set();
+    const reasons = {};
+    const side = (list) => (Array.isArray(list) ? list : []).flatMap((r) => {
+      const t = r && findTrack(r, pool);
+      if (!t) { missing++; return []; }
+      if (used.has(t.id)) return [];
+      used.add(t.id);
+      if (r.reason) reasons[t.id] = String(r.reason).slice(0, 60);
+      return [t.id];
+    });
+    const sideA = side(raw.sideA), sideB = side(raw.sideB);
+    if (!sideA.length && !sideB.length) { empty++; continue; }
+    const tape = newTape({
+      title: String(raw.title || '').trim().slice(0, LABEL_MAX) || '가져온 테이프',
+      length: TAPE_SIDE_SEC[raw.length] ? raw.length : 'C90',
+      type: TAPE_TYPES[raw.type] ? raw.type : DEFAULT_TAPE_TYPE,
+      color: raw.color, made: raw.made === 'ai' ? 'ai' : 'manual', sideA, sideB,
+    });
+    migrateTapeColor(tape); // 색이 없거나 예전 색 토큰이면 새 색으로
+    tape.ink = inkFor(tape.color);
+    if (Object.keys(reasons).length) tape.reasons = reasons;
+    shelfTapes.push(tape);
+    saveTape(tape);
+    added++;
+  }
+  setText($('backupState'), `테이프 ${added}개를 가져왔습니다.`
+    + (missing ? ` 찾지 못한 곡 ${missing}곡은 뺐습니다.` : '') + (empty ? ` 곡이 하나도 없는 테이프 ${empty}개는 건너뛰었습니다.` : ''));
+  render();
+}
+
 /* --- 테이프 편집기(F-40): 사본(draft)을 고치다가 저장할 때만 테이프에 반영한다 --- */
 // 책등 글자색: 바탕이 밝으면 먹색, 어두우면 아이보리
 function inkFor(hex) {
@@ -2408,7 +2529,7 @@ const OLD_TAPE_COLORS = {
   'var(--lcd)': '#D6A53F', 'var(--pen)': '#34497A', 'var(--ink)': '#2B2B30',
 };
 function migrateTapeColor(tape) {
-  const color = OLD_TAPE_COLORS[tape.color] || (tape.color?.startsWith('#') ? null : TAPE_COLORS[0].color);
+  const color = OLD_TAPE_COLORS[tape.color] || (/^#[0-9a-f]{6}$/i.test(tape.color) ? null : TAPE_COLORS[0].color);
   if (!color) return false;
   Object.assign(tape, { color, ink: inkFor(color) });
   return true;
@@ -2457,6 +2578,8 @@ const Editor = {
       el('span', 'ed-palette-name', row).textContent = group;
       list.forEach((c) => swatch(c, row));
     }
+    for (const [value, t] of Object.entries(TAPE_TYPES)) Object.assign(el('option', '', $('edType')), { value, textContent: t.label });
+    $('edType').addEventListener('change', (e) => { this.draft.type = e.target.value; });
     $('edTitle').addEventListener('input', (e) => { this.draft.title = e.target.value; });
     $('edLength').addEventListener('change', (e) => { this.draft.length = e.target.value; this.render(); });
     $('edSearch').addEventListener('input', () => this.renderLibrary());
@@ -2482,7 +2605,7 @@ const Editor = {
   open(tapeId = null) {
     const t = tapeById(tapeId);
     const color = t ? { color: t.color, ink: t.ink || 'var(--ink)' } : TAPE_COLORS[shelfTapes.length % TAPE_COLORS.length];
-    this.draft = { tapeId: t?.id || null, title: t?.title || '', length: t?.length || 'C90', color: color.color, ink: color.ink, A: [...(t?.sideA || [])], B: [...(t?.sideB || [])] };
+    this.draft = { tapeId: t?.id || null, title: t?.title || '', length: t?.length || 'C90', type: TAPE_TYPES[t?.type] ? t.type : DEFAULT_TAPE_TYPE, color: color.color, ink: color.ink, A: [...(t?.sideA || [])], B: [...(t?.sideB || [])] };
     this.confirmDelete = false;
     $('editorTitle').textContent = t ? '테이프 편집' : '새 테이프';
     $('edSave').textContent = t ? '저장' : '선반에 꽂기';
@@ -2490,6 +2613,7 @@ const Editor = {
     $('edDelete').textContent = '테이프 지우기';
     $('edTitle').value = this.draft.title;
     $('edLength').value = this.draft.length;
+    $('edType').value = this.draft.type;
     $('edSearch').value = '';
     this.togglePalette(false);
     this.renderColor();
@@ -2659,7 +2783,7 @@ const Editor = {
       shelfTapes.push(tape);
     }
     const changed = isNew || tape.sideA.join() !== d.A.join() || tape.sideB.join() !== d.B.join();
-    Object.assign(tape, { title: d.title.trim() || '이름 없는 테이프', length: d.length, color: d.color, ink: d.ink, sideA: [...d.A], sideB: [...d.B] });
+    Object.assign(tape, { title: d.title.trim() || '이름 없는 테이프', length: d.length, type: d.type, color: d.color, ink: d.ink, sideA: [...d.A], sideB: [...d.B] });
     if (changed) tape.resume = null;
     saveTape(tape);
     // 데크에 든 테이프의 곡이 바뀌었으면 처음부터 다시 듣는다
@@ -3177,6 +3301,7 @@ function renderJcard() {
   setText($('jcardKicker'), 'J-CARD · ' + length);
   setText($('jcardTitle'), has ? tape.title : '빈 테이프');
   $('editTape').hidden = !tape;
+  $('saveJcard').hidden = !has;
   for (const side of ['A', 'B']) $('tab' + side).setAttribute('aria-selected', String(jcardSide === side));
   $('jcardList').setAttribute('aria-labelledby', 'tab' + jcardSide);
   const ids = sideIds(jcardSide, tape);
@@ -3194,6 +3319,111 @@ function renderJcard() {
     return;
   }
   renderList($('jcardList'), ids, currentId, 'button');
+}
+
+/* --- 인쇄용 J카드(F-46): 실제 크기 300dpi PNG. 앞면 65mm · 책등 12.7mm · 뒷날개 16mm, 높이 101.6mm --- */
+const mm = (v) => (v * 300) / 25.4;
+const cssColor = (v) => (v?.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(v.slice(4, -1)).trim() : v);
+
+// 넓이를 넘으면 끝을 잘라 …를 붙인다(정렬은 g.textAlign을 따른다)
+function fitText(g, text, x, y, max) {
+  if (g.measureText(text).width <= max) { g.fillText(text, x, y); return; }
+  let s = text;
+  while (s.length > 1 && g.measureText(s + '…').width > max) s = s.slice(0, -1);
+  g.fillText(s + '…', x, y);
+}
+
+async function saveJcard() {
+  const tape = viewTape();
+  if (!hasTracks(tape)) return;
+  const hand = handClass(tape.title) === 'hand-ko' ? 'Nanum Pen Script' : 'Permanent Marker';
+  await Promise.all([`40px "${hand}"`, '500 20px "IBM Plex Sans KR"', '700 20px "Archivo Narrow"', '500 20px "IBM Plex Mono"']
+    .map((f) => document.fonts.load(f)));
+  const FRONT = mm(65), SPINE = mm(12.7), FLAP = mm(16), W = Math.round(FRONT + SPINE + FLAP), H = Math.round(mm(101.6));
+  const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
+  const g = canvas.getContext('2d');
+  const paper = cssColor('var(--paper)'), ink = cssColor('var(--ink)'), pen = cssColor('var(--pen)');
+  const band = tape.color, bandInk = cssColor(tape.ink || 'var(--ink)');
+  const pad = mm(4);
+  g.fillStyle = paper;
+  g.fillRect(0, 0, W, H);
+
+  // 앞면: 색 띠(길이·종류), 손글씨 제목, 면별 곡 목록
+  g.fillStyle = band;
+  g.fillRect(0, 0, FRONT, mm(8));
+  g.fillStyle = bandInk;
+  g.font = `700 ${mm(3)}px "Archivo Narrow"`;
+  g.textBaseline = 'middle';
+  g.fillText(`${tape.length} · ${tapeType(tape).name}`, pad, mm(4));
+  g.textBaseline = 'alphabetic';
+  g.fillStyle = pen;
+  // 제목은 넓이에 맞게 글자를 줄이고(최대 40%), 그래도 넘치면 자른다
+  let size = mm(hand === 'Nanum Pen Script' ? 10 : 7);
+  const minSize = size * 0.6;
+  g.font = `${size}px "${hand}"`;
+  while (size > minSize && g.measureText(tape.title).width > FRONT - pad * 2) g.font = `${(size -= 2)}px "${hand}"`;
+  fitText(g, tape.title, pad, mm(19), FRONT - pad * 2);
+  const sides = [['A', tape.sideA], ['B', tape.sideB]].filter(([, ids]) => ids.length);
+  const top = mm(24), lines = sides.reduce((n, [, ids]) => n + ids.length + 1.5, 0);
+  const lh = Math.min(mm(4.2), (H - pad - top) / lines); // 곡이 많으면 줄 간격과 글자를 줄인다
+  let y = top;
+  g.fillStyle = ink;
+  for (const [side, ids] of sides) {
+    g.font = `700 ${lh * 0.8}px "Archivo Narrow"`;
+    g.fillText(`SIDE ${side} · ${fmt(sumSec(ids))}`, pad, y + lh * 0.8);
+    y += lh * 1.5;
+    ids.forEach((id, i) => {
+      const t = library.get(id);
+      g.font = `500 ${lh * 0.66}px "IBM Plex Mono"`;
+      g.textAlign = 'right';
+      g.fillText(fmt(t?.sec || 0), FRONT - pad, y + lh * 0.75);
+      const timeW = g.measureText('00:00').width + mm(2);
+      g.textAlign = 'left';
+      g.font = `500 ${lh * 0.7}px "IBM Plex Sans KR"`;
+      fitText(g, `${pad2(i + 1)}  ${t?.title || '?'}${t?.artist ? ' — ' + t.artist : ''}`, pad, y + lh * 0.75, FRONT - pad * 2 - timeW);
+      y += lh;
+    });
+  }
+
+  // 책등과 뒷날개: 세로로 돌려 아래에서 위로 읽는다
+  g.fillStyle = band;
+  g.fillRect(FRONT, 0, SPINE, H);
+  const vertical = (cx, draw) => { g.save(); g.translate(cx, H / 2); g.rotate(-Math.PI / 2); draw(); g.restore(); };
+  vertical(FRONT + SPINE / 2, () => {
+    g.textBaseline = 'middle';
+    g.fillStyle = bandInk;
+    g.font = `700 ${mm(3)}px "Archivo Narrow"`;
+    g.textAlign = 'right';
+    g.fillText(tape.length, H / 2 - pad, 0);
+    g.font = `${mm(hand === 'Nanum Pen Script' ? 8 : 5.5)}px "${hand}"`;
+    g.textAlign = 'left';
+    fitText(g, tape.title, -H / 2 + pad, 0, H - pad * 2 - mm(12));
+  });
+  vertical(FRONT + SPINE + FLAP / 2, () => {
+    g.textBaseline = 'middle';
+    g.fillStyle = ink;
+    g.font = `500 ${mm(2.6)}px "IBM Plex Mono"`;
+    g.textAlign = 'center';
+    g.fillText(sides.map(([side, ids]) => `SIDE ${side} ${fmt(sumSec(ids))}`).join('   ·   '), 0, -mm(2.5));
+    g.font = `700 ${mm(2.6)}px "Archivo Narrow"`;
+    g.fillText('A W E S O M E   M I X', 0, mm(3));
+  });
+
+  // 접는 선(점선)과 자르는 선(테두리)
+  g.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+  g.lineWidth = 2;
+  g.setLineDash([mm(1), mm(1)]);
+  for (const x of [FRONT, FRONT + SPINE]) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  g.setLineDash([]);
+  g.strokeRect(1, 1, W - 2, H - 2);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  const a = el('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `jcard-${tape.title.replace(/[\\/:*?"<>|]/g, '_')}.png`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showMessage(`"${tape.title}" J카드를 PNG로 저장했습니다. 실제 크기(300dpi)로 인쇄해 접선대로 접으세요.`);
 }
 
 const ACCESS_TEXT = { granted: '읽기 가능', prompt: '권한 필요', denied: '권한 거부됨' };
@@ -3228,8 +3458,16 @@ function renderLibrary() {
 function renderCassette() {
   const cassette = $('cassette');
   const tape = deckTape();
+  // 데크의 테이프 종류가 바뀌면(넣기·꺼내기·편집) 소리와 데크 문구를 바꾼다
+  const type = tapeType(tape);
+  if (Engine.appliedType !== type) {
+    Engine.appliedType = type;
+    Engine.apply();
+    setText($('deckCaption'), `AUTO REVERSE · ${type.name} · 2 HEAD`);
+  }
   if (!cassette || !tape) return;
   cassette.style.setProperty('--tape-color', tape.color);
+  cassette.style.setProperty('--shell-filter', tapeType(tape).shell);
   const title = $('labelTitle');
   setText(title, tape.title);
   title.className = 'label-title ' + handClass(tape.title);
@@ -3375,10 +3613,18 @@ function bindEvents() {
     loadTapeToDeck(id);
   });
   bindShelfDrop();
+  $('exportTapes').addEventListener('click', exportTapes);
+  $('importTapes').addEventListener('click', () => $('importInput').click());
+  $('importInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (file) importTapes(file);
+  });
   Editor.init();
   Curator.init();
   $('newTape').addEventListener('click', () => Editor.open());
   $('editTape').addEventListener('click', () => { const t = viewTape(); if (t) Editor.open(t.id); });
+  $('saveJcard').addEventListener('click', saveJcard);
   $('keyPlay').addEventListener('click', pressPlay);
   $('keyStop').addEventListener('click', pressStop);
   const holdKeys = { ArrowLeft: makeHoldKey($('keyRew'), -1), ArrowRight: makeHoldKey($('keyFf'), 1) };
