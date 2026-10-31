@@ -647,6 +647,7 @@ button.track { cursor: pointer; }
   <div class="editor-foot">
     <button type="button" class="btn btn-danger" id="edDelete">테이프 지우기</button>
     <p class="ed-warn" id="edWarn" role="status" aria-live="polite"></p>
+    <button type="button" class="btn" id="edRandom">랜덤 채우기</button>
     <button type="button" class="btn" id="edSplit">반으로 나누기</button>
     <button type="button" class="btn" id="edCancel">취소</button>
     <button type="button" class="btn btn-primary" id="edSave">선반에 꽂기</button>
@@ -1709,9 +1710,10 @@ function shuffle(list) {
 }
 
 // 곡을 섞어 덜 찬 면부터 담는다. 면 길이(C90이면 45분)를 넘는 곡은 다른 면에, 둘 다 넘으면 뺀다.
-function fillTapeRandomly(ids, sideSec) {
-  const sides = { A: [], B: [] };
-  const used = { A: 0, B: 0 };
+// start에 이미 넣은 곡이 있으면 그 뒤로 남은 자리만 채운다(편집기의 "랜덤 채우기")
+function fillTapeRandomly(ids, sideSec, start = { A: [], B: [] }) {
+  const sides = { A: [...start.A], B: [...start.B] };
+  const used = { A: sumSec(sides.A), B: sumSec(sides.B) };
   for (const id of shuffle([...ids])) {
     const sec = library.get(id).sec;
     const order = used.A <= used.B ? ['A', 'B'] : ['B', 'A'];
@@ -2584,6 +2586,7 @@ const Editor = {
     $('edLength').addEventListener('change', (e) => { this.draft.length = e.target.value; this.render(); });
     $('edSearch').addEventListener('input', () => this.renderLibrary());
     $('edSplit').addEventListener('click', () => this.split());
+    $('edRandom').addEventListener('click', () => this.randomFill());
     $('edSave').addEventListener('click', () => this.save());
     $('edCancel').addEventListener('click', () => this.close());
     $('edClose').addEventListener('click', () => this.close());
@@ -2669,6 +2672,18 @@ const Editor = {
     const { A, B } = splitSides([...this.draft.A, ...this.draft.B]);
     Object.assign(this.draft, { A, B });
     this.render();
+  },
+
+  // 아직 넣지 않은 곡을 무작위로 골라 두 면의 남은 자리를 채운다
+  randomFill() {
+    const d = this.draft;
+    const used = new Set([...d.A, ...d.B]);
+    const pool = libraryOrder.filter((id) => !used.has(id) && isPlayable(library.get(id)));
+    const { A, B } = fillTapeRandomly(pool, TAPE_SIDE_SEC[d.length], d);
+    const added = A.length + B.length - used.size;
+    Object.assign(d, { A, B });
+    this.render();
+    if (!added) $('edWarn').textContent = !pool.length ? '더 넣을 곡이 없습니다.' : '남은 자리에 들어갈 만큼 짧은 곡이 없습니다.';
   },
 
   row(t, n, buttons) {
