@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awesome Mix 카세트 플레이어 개발 보고서 v1</title>
+<style>
+  :root { --sidebar-w: 260px; --accent: #4F46E5; --text: #1f2430; --muted: #6b7280; --bg: #ffffff; --panel: #f7f7fb; --border: #e5e7eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; color: var(--text); background: var(--bg); }
+  .layout { display: flex; min-height: 100vh; }
+  nav.sidebar { position: sticky; top: 0; align-self: flex-start; width: var(--sidebar-w); flex-shrink: 0; height: 100vh; overflow-y: auto; padding: 24px 16px; background: var(--panel); border-right: 1px solid var(--border); }
+  nav.sidebar h1 { font-size: 15px; margin: 0 0 4px; }
+  nav.sidebar .meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  nav.sidebar a { display: block; padding: 7px 10px; margin: 2px 0; font-size: 13.5px; color: var(--text); text-decoration: none; border-radius: 8px; }
+  nav.sidebar a:hover { background: #eceafd; }
+  nav.sidebar a.active { background: var(--accent); color: #fff; }
+  main { flex: 1; min-width: 0; padding: 40px 48px; max-width: 860px; }
+  main section { margin-bottom: 48px; scroll-margin-top: 24px; }
+  main h2 { font-size: 22px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+  main h3 { font-size: 17px; color: var(--accent); }
+  main table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  main th, main td { border: 1px solid var(--border); padding: 8px 10px; font-size: 14px; text-align: left; }
+  main code { background: #f1f1f5; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  main pre { background: #1f2430; color: #eee; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  @media (max-width: 800px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <h1>Awesome Mix 카세트 플레이어</h1>
+    <div class="meta">개발 보고서 v1 · 2026-10-31</div>
+    <a href="#overview">1. 개요</a>
+    <a href="#goals">2. 목표 및 배경</a>
+    <a href="#features">3. 주요 기능</a>
+    <a href="#stack">4. 기술 스택 및 아키텍처</a>
+    <a href="#timeline">5. 개발 과정</a>
+    <a href="#decisions">6. 주요 의사결정과 이유</a>
+    <a href="#troubleshooting">7. 문제 해결 기록</a>
+    <a href="#security">8. 보안/성능 고려사항</a>
+    <a href="#testing">9. 테스트 및 검증</a>
+    <a href="#deploy">10. 배포</a>
+    <a href="#limits">11. 알려진 한계</a>
+    <a href="#future">12. 향후 개선 아이디어</a>
+  </nav>
+  <main id="content">
+    <section id="overview">
+      <h2>1. 개요</h2>
+      <p>작성일: 2026-10-31 · 버전: v1</p>
+      <table>
+        <tr><th>항목</th><th>내용</th></tr>
+        <tr><td>앱 이름</td><td>Awesome Mix 카세트 플레이어</td></tr>
+        <tr><td>한 줄 소개</td><td>내 PC의 MP3 폴더를 실사풍 카세트 데크로 재생하고, 테이프 단위로 믹스를 만들어 선반에 꽂아 두는 브라우저 앱</td></tr>
+        <tr><td>대상 사용자</td><td>로컬 음원을 가진 레트로 감성 음악 애호가, 바이브 코딩 학습자 본인</td></tr>
+        <tr><td>지원 환경</td><td>PC 데스크톱의 크롬·엣지 최신 버전(File System Access API 필요), 화면 폭 1024px 이상</td></tr>
+        <tr><td>개발 기간</td><td>2026-10-28(PRD 작성) ~ 2026-10-31(마무리 단계)</td></tr>
+        <tr><td>저장소</td><td><code>https://github.com/poguni/awesome-mix</code></td></tr>
+      </table>
+    </section>
+
+    <section id="goals">
+      <h2>2. 목표 및 배경</h2>
+      <p>스트리밍 시대에 묻혀 있는 내 PC의 음악 파일을 "카세트테이프를 고르고, 넣고, 누르는" 손맛과 함께 다시 듣게 하는 것이 출발점입니다. PRD가 정한 목표는 네 가지입니다.</p>
+      <ol>
+        <li>폴더를 열고 5초 안에 첫 곡을 재생한다(곡 200개 기준).</li>
+        <li>릴 회전, 감긴 양 변화, 버튼 효과음이 실제 카세트처럼 느껴진다.</li>
+        <li>다시 방문하면 권한 허락 한 번으로 선반의 테이프를 다시 재생한다.</li>
+        <li>AI 큐레이터로 분위기별 테이프를 1분 안에 만든다.</li>
+      </ol>
+      <p>핵심 가치는 <strong>"내 음악을, 진짜 테이프처럼"</strong>입니다. AI는 곡 목록으로 테이프를 짜 주는 큐레이터 한 가지 역할에만 쓰고, 음원은 PC 밖으로 내보내지 않습니다.</p>
+    </section>
+
+    <section id="features">
+      <h2>3. 주요 기능</h2>
+      <h3>음원 불러오기</h3>
+      <ul>
+        <li>폴더 열기(하위 폴더까지 mp3·m4a·ogg·flac·wav 검색), 파일·폴더 끌어다 놓기, 파일 고르기</li>
+        <li>ID3 태그(제목·가수·앨범·연도·장르·앨범 아트) 읽기, 태그가 없으면 파일 이름의 "가수 - 제목"을 사용</li>
+        <li>옛 한국 태그 프로그램이 CP949·Shift_JIS로 저장한 깨진 태그 복원</li>
+        <li>태그 캐시와 "테이프 녹음 중… 37/210" 진행 표시</li>
+      </ul>
+      <h3>카세트 데크</h3>
+      <ul>
+        <li>실사 이미지 데크·카세트·키·헤드폰 레이어(좌표는 <code>assets/assets.json</code>)</li>
+        <li>PLAY·STOP/EJECT·REW·FF 키: 눌림 표현(아래로 1.5%, 밝기 0.88), Web Audio로 합성한 기계음</li>
+        <li>릴 회전과 감긴 양 변화(감긴 양이 적은 릴이 더 빨리 돎), REW·FF는 1초에 10초씩 감기</li>
+        <li>덮개 열림 → 카세트 내려옴 → 덮개 닫힘, Y축 180도 뒤집기로 A·B면 전환, 오토 리버스</li>
+        <li>호박색 LCD, 키보드 단축키, 미디어 키와 OS 재생 카드(Media Session)</li>
+      </ul>
+      <h3>아날로그 효과</h3>
+      <ul>
+        <li>테이프 히스(재생 중에만 나는 다이나믹 히스), wow &amp; flutter, 톤 색감(로패스 + 약한 포화)</li>
+        <li>테이프 종류(노멀·크롬·메탈): 히스 양·고음·카세트 셸 색감을 한꺼번에 바꿈</li>
+      </ul>
+      <h3>테이프 선반</h3>
+      <ul>
+        <li>테이프 만들기·편집(C46·C60·C90, 기본 5색과 40색 팔레트, 면별 곡 정렬과 용량 경고)</li>
+        <li>책등 위 편집·지우기·좌우 옮기기 버튼, 끌어서 순서 바꾸기</li>
+        <li>이어 듣기(면·곡·위치 저장), 누락 곡 "다시 찾기"</li>
+        <li>테이프 구성 JSON 내보내기·가져오기, 인쇄용 J카드 PNG(300dpi 실제 크기)</li>
+      </ul>
+      <h3>AI 믹스테이프 큐레이터(OpenRouter)</h3>
+      <ul>
+        <li>분위기 문장으로 A·B면과 라벨 제목 제안, 라이브러리 자동 분류(테이프 3~6개)</li>
+        <li>미리 보기에서 라벨 고치기·곡 빼기·순서 바꾸기 후 선반에 꽂기</li>
+        <li>사용자 본인의 API 키를 브라우저에만 저장, 곡 메타데이터(텍스트)만 전송</li>
+      </ul>
+    </section>
+
+    <section id="stack">
+      <h2>4. 기술 스택 및 아키텍처</h2>
+      <table>
+        <tr><th>구성 요소</th><th>선택</th><th>이유</th></tr>
+        <tr><td>앱 구조</td><td><code>index.html</code> 한 파일(HTML·CSS·JS), 빌드 도구 없음</td><td>정적 호스팅에 그대로 올릴 수 있고, 학습자가 한 파일로 전체를 볼 수 있음</td></tr>
+        <tr><td>외부 라이브러리</td><td>jsmediatags 3.9.5(cdnjs, 버전 고정) 하나</td><td>ID3 태그 읽기만 외부에 맡기고 나머지는 브라우저 기본 기능으로 해결</td></tr>
+        <tr><td>파일 접근</td><td>File System Access API</td><td>폴더 핸들을 저장해 재방문 때 권한 한 번으로 복원</td></tr>
+        <tr><td>저장</td><td>IndexedDB(roots, tracks, art, tapes, settings) + localStorage 사본</td><td>핸들·태그·테이프를 브라우저에 보관, 창을 닫는 순간의 저장은 localStorage로 보완</td></tr>
+        <tr><td>소리</td><td>Web Audio API</td><td>테이프 효과 그래프와 효과음 합성(음원 파일 없이)</td></tr>
+        <tr><td>이미지</td><td>WebP 레이어 + <code>assets.json</code> 좌표</td><td>AI로 만든 이미지마다 부품 위치가 달라 좌표를 따로 두고, 코드는 %로 변환해 사용</td></tr>
+        <tr><td>AI</td><td>OpenRouter Chat Completions(브라우저에서 직접 호출)</td><td>서버 없이 사용자 키로 여러 모델을 고를 수 있음</td></tr>
+        <tr><td>서체</td><td>Google Fonts(Archivo Narrow, IBM Plex Sans KR·Mono, VT323, Permanent Marker, Nanum Pen Script)</td><td>오픈 라이선스</td></tr>
+      </table>
+      <h3>코드 구성(<code>index.html</code> 안의 모듈 머리말)</h3>
+      <table>
+        <tr><th>모듈</th><th>하는 일</th></tr>
+        <tr><td>Assets</td><td>assets.json 읽기, 이미지 미리 불러오기, 좌표를 %로 변환, 실패 시 CSS 데크로 대체</td></tr>
+        <tr><td>Store</td><td>IndexedDB 읽기·쓰기</td></tr>
+        <tr><td>Library</td><td>폴더 스캔, 태그·길이 읽기(동시 4개), 권한 재요청, 다시 찾기</td></tr>
+        <tr><td>Engine</td><td>AudioContext, 재생, 히스·와우·톤, 테이프 종류, 효과음, 다음 곡 미리 준비</td></tr>
+        <tr><td>Deck</td><td>상태 머신(STOP·PLAY·REW·FF), 넣기·꺼내기·뒤집기, 이어 듣기, Media Session</td></tr>
+        <tr><td>Reels</td><td>requestAnimationFrame으로 릴 각도·반지름 갱신</td></tr>
+        <tr><td>Shelf</td><td>선반, 책등 도구, 편집기, 색 팔레트, 내보내기·가져오기</td></tr>
+        <tr><td>Curator</td><td>OpenRouter 호출, 응답 검증, 미리 보기</td></tr>
+      </table>
+      <h3>오디오 그래프</h3>
+<pre><code>&lt;audio&gt; → 와우 Delay → [톤: Lowpass → 포화 | 그대로] → 볼륨 → 마스터
+핑크 노이즈 → Highpass 3kHz → 다이나믹 히스 → 히스 양 → 볼륨
+효과음 → 효과음 볼륨 → 마스터</code></pre>
+      <p>켜고 끌 때는 노드를 다시 잇지 않고 게인·깊이만 <code>setTargetAtTime</code>(약 50ms)으로 바꿔 튀는 소리를 막습니다.</p>
+    </section>
+
+    <section id="timeline">
+      <h2>5. 개발 과정 (타임라인)</h2>
+      <table>
+        <tr><th>날짜</th><th>단계</th><th>내용</th></tr>
+        <tr><td>10-28</td><td>기획</td><td>PRD v1 작성, 디자인 시안 A(Midnight Deck)·B 비교 후 A 확정, 실사 이미지 명세 작성</td></tr>
+        <tr><td>10-29</td><td>M0 준비</td><td>폴더 구조, CLAUDE.md, assets.json 점검 스크립트, ffmpeg 테스트 음원 생성 스크립트</td></tr>
+        <tr><td>10-29</td><td>M1 재생 뼈대</td><td>폴더 열기·끌어다 놓기·태그 읽기·곡 길이, 면 나누기(F-16)</td></tr>
+        <tr><td>10-29</td><td>M1 보완</td><td>옛 태그 인코딩(CP949·Shift_JIS) 복원, ALAC 재생 불가 안내, 1시간 넘는 시간 표시</td></tr>
+        <tr><td>10-29</td><td>M2 실사 데크</td><td>assets.json 좌표로 데크·카세트·덮개·키·헤드폰 합성, 릴 계산(6-3), 덮개·넣기·뒤집기 연출</td></tr>
+        <tr><td>10-29</td><td>M3 조작감</td><td>합성 효과음, REW·FF 감기와 곡 건너뛰기, 단축키, Media Session</td></tr>
+        <tr><td>10-29</td><td>M4 아날로그 효과</td><td>히스·wow &amp; flutter·톤 색감, 설정 창</td></tr>
+        <tr><td>10-29</td><td>M5 선반과 저장</td><td>IndexedDB 저장·복원, 태그 캐시, 테이프 편집기, 이어 듣기, 다시 찾기, 오토 리버스</td></tr>
+        <tr><td>10-29</td><td>M6 AI 큐레이터</td><td>OpenRouter 호출, 응답 검증, 미리 보기, 자동 분류, 동의 창</td></tr>
+        <tr><td>10-30</td><td>이미지 수정</td><td>카세트 셸 이미지 교체(창·허브 구멍 투명 처리)</td></tr>
+        <tr><td>10-31</td><td>수용 기준 점검</td><td>PRD 9-1의 12개 기준을 Playwright로 점검, 모두 통과</td></tr>
+        <tr><td>10-31</td><td>선반 개선</td><td>책등 편집·지우기·옮기기 버튼, 끌어서 순서 바꾸기, 테이프 색 팔레트(기본 5색 + 40색)</td></tr>
+        <tr><td>10-31</td><td>마무리(P2)</td><td>내보내기·가져오기(F-45), 테이프 종류(F-33), 다음 곡 미리 준비, 인쇄용 J카드(F-46)</td></tr>
+        <tr><td>10-31</td><td>문구 다듬기</td><td>맞춤법·표현 검사 6건 수정(커밋 전)</td></tr>
+      </table>
+    </section>
+
+    <section id="decisions">
+      <h2>6. 주요 의사결정과 이유</h2>
+      <table>
+        <tr><th>결정</th><th>이유</th></tr>
+        <tr><td>디자인은 시안 A(어두운 하이파이 데크)</td><td>실사 이미지와 호박색 LCD가 잘 어울리고, 테이프 색이 돋보임</td></tr>
+        <tr><td>데크·카세트는 실사 이미지, 움직이는 부분만 코드</td><td>AI 이미지로 질감을 살리고, 릴·덮개·키는 코드로 움직여 자연스러움 확보</td></tr>
+        <tr><td>이미지 좌표를 <code>assets.json</code>으로 분리</td><td>이미지를 바꿔도 코드를 고치지 않게 함. <code>tools/calibrate.html</code>에서 끌어서 측정</td></tr>
+        <tr><td>키 눌림은 이미지 교체 대신 <code>translateY 1.5%</code> + <code>brightness 0.88</code></td><td>이미지 수를 줄이고 눌림 정도를 한곳에서 조절</td></tr>
+        <tr><td>데크 이미지 최대 약 900px</td><td>시안의 600px로는 실사 키 높이가 약 33px밖에 되지 않음</td></tr>
+        <tr><td>첫 테이프는 선반에만 꽂고 사용자가 넣게 함</td><td>"고르고 넣는" 경험이 앱의 핵심이라 자동 삽입하지 않음</td></tr>
+        <tr><td>폴더 권한은 테이프를 넣을 때 요청</td><td>앱을 열자마자 권한 창이 뜨지 않게 함</td></tr>
+        <tr><td>곡 id를 "폴더id:상대 경로"로 고정</td><td>다시 열거나 다시 찾아도 테이프의 곡 연결이 끊기지 않음</td></tr>
+        <tr><td>키가 없을 때도 AI 패널 자리를 유지</td><td>시안 A 배치를 지키고, "키 넣기" 안내로 기능을 알림</td></tr>
+        <tr><td>테이프 색을 색 토큰 6개 → 기본 5색 + 40색 팔레트로 변경</td><td>사용자 요청. 책등 글자색은 바탕 밝기로 자동 결정, 예전 색은 불러올 때 이전</td></tr>
+        <tr><td>테이프 종류 기본값은 크롬</td><td>기존 소리(로패스 12kHz, 히스 배율 1)를 그대로 유지</td></tr>
+        <tr><td>가져오기의 곡 찾기 순서: 폴더+경로 → 경로 → 파일 이름+크기 → 제목+가수</td><td>PC를 옮기거나 폴더 이름이 바뀌어도 최대한 찾아내기 위해</td></tr>
+      </table>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>7. 문제 해결 기록</h2>
+      <h3>옛 태그의 글자 깨짐(M1)</h3>
+      <ul>
+        <li>증상: 일본어 곡 제목이 <code>ªµª¯ªéªóªÜ</code>처럼 깨짐.</li>
+        <li>원인: 옛 한국 태그 프로그램이 CP949로 저장하고 인코딩은 ISO-8859-1로 표기. jsmediatags는 표기대로 읽음.</li>
+        <li>해결: 128 이상 바이트가 섞인 글자를 원래 바이트로 되돌려 CP949·Shift_JIS로 다시 읽고, 한글·가나·한자가 자연스러운 쪽을 선택. <code>Beyoncé</code> 같은 정상 서유럽어는 그대로 둠. 재현용 테스트 음원도 함께 추가.</li>
+      </ul>
+      <h3>m4a 파일이 재생되지 않음(M1)</h3>
+      <ul>
+        <li>원인: ALAC(애플 무손실) 코덱은 크롬·엣지가 재생하지 못함.</li>
+        <li>해결: 코덱을 알아보고 "ALAC 재생 불가"로 표시해 건너뛰고, FLAC 변환을 안내.</li>
+      </ul>
+      <h3>릴이 돌지 않고 감긴 테이프가 보이지 않음(M2)</h3>
+      <ul>
+        <li>원인: 카세트 셸 이미지의 창과 허브 구멍이 투명하지 않아(알파 255), 그 아래에서 도는 허브와 테이프를 덮고 있었음. 처음 M2 보고에서 이 기준을 통과로 잘못 적었다가 바로잡음.</li>
+        <li>해결: 셸 이미지의 창·허브 구멍을 투명하게 오려 낸 이미지로 교체(10-30 커밋).</li>
+      </ul>
+      <h3>허브가 축에서 벗어나 흔들려 보임(M2)</h3>
+      <ul>
+        <li>처음 진단(테이프 질감의 동심원이 치우침)은 잘못된 측정이었음.</li>
+        <li>실제 원인: 허브 이미지에 왼쪽 위 조명의 명암이 그려져 있어, 돌면 밝은 쪽이 함께 돌아 흔들리는 것처럼 보임.</li>
+        <li>해결: 방향에 따른 밝기 차이만 걷어 낸 시안(<code>_work/cassette-hub-flat.webp</code>)을 만들어 비교한 뒤 적용 여부를 사용자가 결정.</li>
+      </ul>
+      <h3>새로 고침하면 이어 듣기 위치가 3초 전으로 돌아감(M5)</h3>
+      <ul>
+        <li>원인: 창을 닫는 순간에는 IndexedDB 저장이 끝나지 않음.</li>
+        <li>해결: <code>pagehide</code>·<code>visibilitychange</code> 때 localStorage에 사본을 남기고, 다음 방문 때 더 새것을 사용. 설정도 같은 방식으로 보완.</li>
+      </ul>
+      <h3>옮긴 파일이 새 곡으로 한 번 더 등록됨(M5)</h3>
+      <ul><li>해결: "다시 찾기"에서 같은 파일로 판명된 두 곡을 원래 곡으로 합침.</li></ul>
+      <h3>선반 도구 버튼의 잘못된 테이프 참조(10-31)</h3>
+      <ul>
+        <li>문제: 도구 버튼이 처음 만든 테이프 객체를 계속 붙잡으면, 테이프 목록을 다시 읽은 뒤 엉뚱한 테이프를 지울 수 있음.</li>
+        <li>해결: 클릭할 때마다 id로 현재 테이프를 다시 찾음.</li>
+      </ul>
+      <h3>편집기 색 견본 모양 불일치(10-31)</h3>
+      <ul>
+        <li>원인: <code>.ed-field input</code> 규칙이 색 견본(radio)에도 높이·모서리 값을 덮어씀.</li>
+        <li>해결: <code>.ed-colors .swatch</code>로 동그라미 모양을 다시 지정.</li>
+      </ul>
+    </section>
+
+    <section id="security">
+      <h2>8. 보안/성능 고려사항</h2>
+      <h3>보안·개인정보</h3>
+      <ul>
+        <li>OpenRouter API 키는 코드·저장소·로그에 넣지 않고, 사용자가 입력한 값을 IndexedDB에만 저장. 오류 메시지에서도 키를 가림.</li>
+        <li>AI 호출에는 짧은 id·제목·가수·앨범·연도·장르·길이만 전송. 음원·앨범 아트·파일 경로는 보내지 않음. 처음 한 번 전송 동의를 받음.</li>
+        <li>가져오기 파일의 색 값은 <code>#RRGGBB</code> 형식만 받아들임.</li>
+        <li>영화·제조사 로고와 상표 이름을 화면과 코드에 쓰지 않음. 효과음은 모두 합성.</li>
+      </ul>
+      <h3>성능</h3>
+      <ul>
+        <li>태그는 동시 4개씩 읽고, 스캔 중에도 재생 가능. 태그·길이·앨범 아트(256px로 축소)는 캐시.</li>
+        <li>애니메이션은 <code>transform</code>·<code>opacity</code>·<code>filter</code>만 사용.</li>
+        <li>음원 Blob URL은 지금 곡과 다음 곡 것만 유지하고, 다음 곡은 숨은 <code>&lt;audio preload="auto"&gt;</code>로 미리 읽어 둠.</li>
+        <li>파일 크기: <code>index.html</code> 약 178KB(기준 300KB 이하), <code>assets/</code> 약 1.5MB.</li>
+      </ul>
+    </section>
+
+    <section id="testing">
+      <h2>9. 테스트 및 검증</h2>
+      <h3>방법</h3>
+      <ul>
+        <li>Playwright(크롬)로 <code>http://localhost:8000</code>을 열어 실제 조작으로 확인. 1440×900과 1024×768 화면을 시안과 비교.</li>
+        <li>폴더 선택 창은 자동으로 누를 수 없어, 테스트 곡을 브라우저 내부 저장소(OPFS)에 복사하고 그 핸들을 선택 결과로 넘겨 실제 폴더 경로를 그대로 시험.</li>
+        <li>AI 큐레이터는 OpenRouter 응답을 가짜로 만들어 시험(없는 곡·중복 곡·401·네트워크 오류 등).</li>
+        <li>소리는 <code>AudioParam</code> 호출을 기록해 값이 순간적으로 바뀌지 않는지 확인.</li>
+        <li>테스트 음원: <code>tools/make-test-audio.py</code>로 만든 태그·길이가 서로 다른 곡, 태그 없는 곡, 옛 인코딩 태그 곡, ALAC·FLAC, 200곡 묶음.</li>
+      </ul>
+      <h3>PRD 9-1 수용 기준(10-31 점검, 12개 모두 통과)</h3>
+      <table>
+        <tr><th>기준</th><th>결과</th></tr>
+        <tr><td>5초 안에 첫 곡 재생(200곡)</td><td>선반에 테이프 0.9초, 재생 시작 약 2.2초</td></tr>
+        <tr><td>태그 없는 파일도 제목·가수 표시</td><td>통과</td></tr>
+        <tr><td>재생 중에만 릴 회전, 면 끝에서 왼쪽 빔·오른쪽 가득</td><td>왼쪽 0.25(허브 크기), 오른쪽 1.0</td></tr>
+        <tr><td>허브가 스핀들 위에 정확히, 테이프는 창 안에서만</td><td>중심 차이 0.09px·0.75px</td></tr>
+        <tr><td>덮개 열림 → 넣기 → 닫힘이 끊김 없음</td><td>50ms 간격 기록으로 확인</td></tr>
+        <tr><td>네 키의 눌림 표현과 효과음, STOP이 다른 키를 풀어 줌</td><td>통과</td></tr>
+        <tr><td>A면 끝에서 멈춤, 뒤집은 뒤 B면 첫 곡부터</td><td>통과</td></tr>
+        <tr><td>히스·와우 켜고 끌 때 튀는 소리 없음</td><td>모든 값을 <code>setTargetAtTime</code>으로 변경(귀로 확인은 사용자 몫)</td></tr>
+        <tr><td>테이프 3개와 이어 듣기 위치가 새로 고침 후에도 유지</td><td>통과</td></tr>
+        <tr><td>AI가 라이브러리 곡만, 면 용량 안에서 고름</td><td>가짜 응답으로 통과, 용량 초과는 코드로 확인</td></tr>
+        <tr><td>키가 없거나 호출이 실패해도 나머지 기능 동작</td><td>401·네트워크·빈 결과 모두 통과</td></tr>
+        <tr><td>오리지널 디자인(5-6 체크리스트)</td><td>통과</td></tr>
+      </table>
+      <h3>마무리 기능 확인(10-31)</h3>
+      <ul>
+        <li>선반 버튼·끌어서 옮기기 후 새로 고침해도 순서 유지, 확인 창을 거친 지우기, 데크에 든 테이프 지우기 막힘.</li>
+        <li>내보내기·가져오기: 경로가 바뀐 곡은 제목·가수로 찾고, 없는 곡 수를 알리며, 다른 형식의 파일은 거절.</li>
+        <li>테이프 종류별 히스·로패스 값 변경(메탈: 16000Hz, 히스 0.0044)과 셸 색감·데크 문구 변경.</li>
+        <li>곡 사이 끊김: 바꾸기 전 16~30ms → 바꾼 뒤 12~23ms. 열린 음원 URL은 늘 2개 이하.</li>
+        <li>J카드 PNG 1107×1200px(300dpi에서 93.7×101.6mm).</li>
+      </ul>
+    </section>
+
+    <section id="deploy">
+      <h2>10. 배포</h2>
+      <ul>
+        <li>형태: <code>index.html</code> + <code>assets/</code> 폴더의 정적 사이트. 빌드 과정이 없음.</li>
+        <li>로컬 실행: 프로젝트 폴더에서 <code>python -m http.server 8000</code> → <code>http://localhost:8000</code>. <code>file://</code>로 열면 assets.json을 읽지 못함.</li>
+        <li>권장 배포: GitHub Pages(저장소 <code>poguni/awesome-mix</code>의 <code>main</code> 브랜치 루트). HTTPS가 자동으로 붙어 File System Access와 fetch가 그대로 동작. 2026-10-31 현재 배포 주소가 켜져 있는지는 확인하지 않음.</li>
+        <li>주의: 브라우저 저장소는 주소마다 따로라, <code>localhost</code>에서 만든 선반은 배포 주소로 옮겨지지 않음. 이제는 "선반 백업"의 내보내기·가져오기로 옮길 수 있음.</li>
+      </ul>
+    </section>
+
+    <section id="limits">
+      <h2>11. 알려진 한계</h2>
+      <ul>
+        <li>크롬·엣지 데스크톱 전용. 사파리·파이어폭스·모바일은 안내 화면만 표시.</li>
+        <li>폴더 권한은 브라우저 정책에 따라 재방문 때 다시 물을 수 있음.</li>
+        <li>ALAC(m4a 무손실)은 재생할 수 없음.</li>
+        <li>카세트 셸 이미지 비율(1.51:1)이 데크 칸 비율(1.80:1)과 달라 가장자리가 잘려 보임(<code>check-assets.py</code> 경고).</li>
+        <li>데크 이미지의 볼륨 휠은 좌표가 없어 조작할 수 없고, 볼륨은 슬라이더로만 조절.</li>
+        <li>실제 OpenRouter 키로 호출하는 시험은 자동 테스트에 넣지 않음(비용과 결과 변동 때문에 가짜 응답으로 검증).</li>
+        <li>J카드는 곡이 많으면 글자가 작아짐(한 면 12곡 정도까지 읽기 좋음).</li>
+        <li>곡 사이 끊김 개선은 작은 파일·SSD 환경에서만 측정함.</li>
+        <li>앱 이름 "Awesome Mix Vol. 1"은 특정 영화에서 널리 알려진 문구라 공개 배포 시 한 번 검토가 필요함.</li>
+      </ul>
+    </section>
+
+    <section id="future">
+      <h2>12. 향후 개선 아이디어 / 업데이트 계획</h2>
+      <h3>다음에 하면 좋을 것</h3>
+      <ul>
+        <li>GitHub Pages 배포와 배포 주소에서 수용 기준 다시 점검.</li>
+        <li>실제 OpenRouter 키로 저렴한 모델 2~3개를 시험해 응답 품질·속도·비용을 비교하고 기본 모델 권장값 정하기.</li>
+        <li>카세트 셸 이미지를 데크 칸 비율(1.80:1)로 다시 만들어 잘림 해소.</li>
+        <li>디자인 시안·PRD HTML판(<code>Awesome_Mix_PRD_v2.html</code>)을 최신 PRD와 맞추기.</li>
+      </ul>
+      <h3>여유가 있으면</h3>
+      <ul>
+        <li>테이프 종류별 기본 색·라벨 무늬(크롬은 은색 띠, 메탈은 검은 라벨 등)로 선반에서도 종류가 보이게 하기.</li>
+        <li>J카드에 앨범 아트 모자이크나 손글씨 메모 칸 넣기, 곡이 많을 때 두 단 배치.</li>
+        <li>내보내기 파일에 이어 듣기 위치까지 담는 선택지.</li>
+        <li>곡 사이 무음 길이(실제 테이프처럼 2~4초 간격) 설정.</li>
+      </ul>
+      <h3>아이디어 수준(PRD 9-3)</h3>
+      <ul>
+        <li>AI가 쓰는 라벨·라이너 노트, 곡 사이 라디오 DJ 멘트.</li>
+        <li>스펙트럼 VU 미터, 테이프 늘어짐·오염 효과.</li>
+        <li>모바일 대응(파일 접근 방식이 달라 큰 작업).</li>
+      </ul>
+    </section>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.sidebar a');
+  const sections = [...links].map(a => document.querySelector(a.getAttribute('href')));
+  const setActive = (id) => links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => { if (entry.isIntersecting) setActive(entry.target.id); });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach((el) => el && observer.observe(el));
+</script>
+</body>
+</html>

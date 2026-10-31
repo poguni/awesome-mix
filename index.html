@@ -500,7 +500,7 @@ button.track { cursor: pointer; }
           <div class="lcd" role="status" aria-live="polite">
             <div class="lcd-top"><span id="lcdInfo">NO TAPE</span><span id="lcdTime">0:00 / 0:00</span></div>
             <div class="lcd-title" id="lcdTitle">테이프가 비어 있습니다</div>
-            <div class="lcd-artist" id="lcdArtist">폴더를 열면 첫 테이프를 만들어 넣어 드립니다</div>
+            <div class="lcd-artist" id="lcdArtist">폴더를 열면 첫 테이프를 만들어 선반에 꽂아 드립니다</div>
           </div>
           <div class="counter-box" id="counterBox" hidden><small>COUNTER</small><span id="counterText">0000</span></div>
         </div>
@@ -551,7 +551,7 @@ button.track { cursor: pointer; }
       <section class="panel panel-side curator" aria-label="AI 믹스테이프 큐레이터">
         <div class="panel-head"><h2>AI 믹스테이프 큐레이터</h2><span class="pill">OpenRouter</span></div>
         <div class="curator-nokey" id="curatorNoKey">
-          <p>설정에서 OpenRouter API 키를 넣으면, 분위기만 적어도 내 라이브러리 곡으로 테이프를 만들어 드려요.</p>
+          <p>설정에서 OpenRouter API 키를 넣으면, 분위기만 적어도 내 라이브러리 곡으로 테이프를 만들어 드립니다.</p>
           <button type="button" class="mix-btn" id="curatorKeyBtn">키 넣기</button>
         </div>
         <form class="curator-form" id="curatorForm" hidden>
@@ -579,7 +579,7 @@ button.track { cursor: pointer; }
           <p id="curatorErrorText"></p>
           <button type="button" class="btn btn-small" id="curatorRetry">다시 시도</button>
         </div>
-        <p>곡 제목·가수 같은 정보만 보내고, 음원 파일은 내 PC 밖으로 나가지 않아요.</p>
+        <p>곡 제목·가수 같은 정보만 보내고, 음원 파일은 내 PC 밖으로 나가지 않습니다.</p>
       </section>
     </div>
   </main>
@@ -704,7 +704,7 @@ button.track { cursor: pointer; }
       <output id="hissLevelOut" for="hissLevel"></output>
     </label>
     <label class="setting-row">
-      <span>와우·플러터 세기 <small>켜고 끄기는 상단 WOW 버튼</small></span>
+      <span>와우·플러터 세기 <small>켜고 끄기는 상단 WOW &amp; FLUTTER 버튼</small></span>
       <input type="range" id="wowDepth" min="0" max="1.2" step="0.05" value="0.6">
       <output id="wowDepthOut" for="wowDepth"></output>
     </label>
@@ -1242,7 +1242,7 @@ function finishScan() {
   const missing = all.filter((t) => t.missing).length;
   const temp = all.filter((t) => t.temp).length;
   showMessage(`녹음 완료 · ${library.size}곡`
-    + (alac ? ` · ALAC(애플 무손실) ${alac}곡은 크롬·엣지에서 재생할 수 없어 건너뜁니다(FLAC로 바꾸면 재생됩니다)` : '')
+    + (alac ? ` · ALAC(애플 무손실) ${alac}곡은 크롬·엣지에서 재생할 수 없어 건너뜁니다(FLAC으로 바꾸면 재생됩니다)` : '')
     + (unreadable ? ` · 읽을 수 없는 파일 ${unreadable}개` : '')
     + (missing ? ` · 찾을 수 없는 파일 ${missing}개` : '')
     + (temp ? ` · 파일 고르기로 넣은 ${temp}곡은 임시 곡이라 새로 고침하면 사라집니다` : ''));
@@ -2491,7 +2491,7 @@ async function importTapes(file) {
     added++;
   }
   setText($('backupState'), `테이프 ${added}개를 가져왔습니다.`
-    + (missing ? ` 찾지 못한 곡 ${missing}곡은 뺐습니다.` : '') + (empty ? ` 곡이 하나도 없는 테이프 ${empty}개는 건너뛰었습니다.` : ''));
+    + (missing ? ` 찾지 못한 곡 ${missing}개는 뺐습니다.` : '') + (empty ? ` 곡이 하나도 없는 테이프 ${empty}개는 건너뛰었습니다.` : ''));
   render();
 }
 
@@ -3423,7 +3423,7 @@ async function saveJcard() {
   a.download = `jcard-${tape.title.replace(/[\\/:*?"<>|]/g, '_')}.png`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  showMessage(`"${tape.title}" J카드를 PNG로 저장했습니다. 실제 크기(300dpi)로 인쇄해 접선대로 접으세요.`);
+  showMessage(`"${tape.title}" J카드를 PNG로 저장했습니다. 실제 크기(300dpi)로 인쇄해 점선을 따라 접으세요.`);
 }
 
 const ACCESS_TEXT = { granted: '읽기 가능', prompt: '권한 필요', denied: '권한 거부됨' };
