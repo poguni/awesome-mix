@@ -381,7 +381,14 @@ button.track { cursor: pointer; }
 .ed-colors { flex-direction: row; flex-wrap: wrap; gap: 8px; }
 .ed-colors legend { margin-bottom: 6px; }
 .swatch { appearance: none; width: 36px; height: 36px; margin: 0; border-radius: 50%; border: 2px solid var(--line-strong); cursor: pointer; }
-.swatch:checked { outline: 2px solid var(--lcd); outline-offset: 2px; }
+.swatch:checked, .swatch-more.is-custom { outline: 2px solid var(--lcd); outline-offset: 2px; }
+.swatch-more { padding: 0; background: conic-gradient(#E53935, #FDD835, #43A047, #00ACC1, #3949AB, #D81B60, #E53935); }
+.ed-palette { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+.ed-palette[hidden] { display: none; }
+.ed-palette-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ed-palette-name { width: 52px; font-size: 12px; color: var(--muted); }
+.ed-palette .swatch { width: 28px; height: 28px; }
+.ed-colors .swatch { height: 36px; padding: 0; border-radius: 50%; } /* .ed-field input 규칙을 덮는다 */
 .editor-body { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .ed-col { min-height: 0; display: flex; flex-direction: column; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
 .ed-col h3 { margin: 0; font-family: 'Archivo Narrow', sans-serif; font-size: 13px; letter-spacing: 0.2em; color: var(--muted); display: flex; justify-content: space-between; }
@@ -609,6 +616,7 @@ button.track { cursor: pointer; }
       </select>
     </label>
     <fieldset class="ed-field ed-colors" id="edColors"><legend>색</legend></fieldset>
+    <div class="ed-palette" id="edPalette" hidden></div>
   </div>
   <div class="editor-body">
     <section class="ed-col ed-lib" aria-labelledby="edLibTitle">
@@ -993,6 +1001,7 @@ async function restore() {
     tape.sideA = tape.sideA.filter((id) => library.has(id));
     tape.sideB = tape.sideB.filter((id) => library.has(id));
     if (had && !hasTracks(tape)) { Store.delete('tapes', tape.id); continue; }
+    if (migrateTapeColor(tape)) saveTape(tape);
     shelfTapes.push(tape);
   }
   sortLibrary();
@@ -1643,7 +1652,7 @@ const currentTrack = () => library.get(deck.queue[deck.index]);
 function newTape(fields) {
   return {
     id: 'tape-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    title: '새 테이프', length: 'C90', color: 'var(--accent)', sideA: [], sideB: [],
+    title: '새 테이프', length: 'C90', color: TAPE_COLORS[0].color, ink: TAPE_COLORS[0].ink, sideA: [], sideB: [],
     resume: null, made: 'manual', order: shelfTapes.reduce((m, t) => Math.max(m, t.order), -1) + 1, ...fields,
   };
 }
@@ -2366,14 +2375,44 @@ function renderShelf() {
 }
 
 /* --- 테이프 편집기(F-40): 사본(draft)을 고치다가 저장할 때만 테이프에 반영한다 --- */
+// 책등 글자색: 바탕이 밝으면 먹색, 어두우면 아이보리
+function inkFor(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 0.6 ? 'var(--ink)' : 'var(--paper)';
+}
+const tapeColor = (name, color) => ({ name, color, ink: inkFor(color) });
+
+// 기본 색 5개(마지막 자리는 "더 많은 색" 버튼)
 const TAPE_COLORS = [
-  { name: '주황', color: 'var(--accent)', ink: 'var(--ink)' },
-  { name: '청록', color: 'var(--ai)', ink: 'var(--ink)' },
-  { name: '아이보리', color: 'var(--paper)', ink: 'var(--pen)' },
-  { name: '호박', color: 'var(--lcd)', ink: 'var(--ink)' },
-  { name: '파랑', color: 'var(--pen)', ink: 'var(--paper)' },
-  { name: '먹색', color: 'var(--ink)', ink: 'var(--paper)' },
+  tapeColor('번트 오렌지', '#D9692E'),
+  tapeColor('딥 틸', '#2F7F7A'),
+  tapeColor('오트밀', '#E8DFCB'),
+  tapeColor('머스터드', '#D6A53F'),
+  tapeColor('미드나잇 블루', '#34497A'),
 ];
+// "더 많은 색" 팔레트: 10색씩 4묶음
+const TAPE_PALETTE = [
+  ['비비드', [['레드', '#E53935'], ['오렌지', '#FB8C00'], ['옐로', '#FDD835'], ['라임', '#7CB342'], ['그린', '#43A047'],
+    ['시안', '#00ACC1'], ['블루', '#1E88E5'], ['인디고', '#3949AB'], ['퍼플', '#8E24AA'], ['마젠타', '#D81B60']]],
+  ['파스텔', [['블러시', '#F4B6C2'], ['피치', '#F8C8A8'], ['버터', '#F6E7A1'], ['민트', '#BDE5C8'], ['세이지', '#C9D8B6'],
+    ['스카이', '#B7D7F0'], ['페리윙클', '#C3C8F0'], ['라벤더', '#D6C4EC'], ['라일락', '#E6C6E0'], ['코랄 핑크', '#F2A7A0']]],
+  ['빈티지', [['테라코타', '#C0603F'], ['러스트', '#A34A28'], ['올리브', '#7A7A3A'], ['포레스트', '#3E6B4E'], ['틸 그레이', '#4F7C82'],
+    ['슬레이트 블루', '#5A6F9A'], ['플럼', '#7B4B6A'], ['와인', '#7A2E3A'], ['카멜', '#B58A5A'], ['모스', '#8A9A5B']]],
+  ['뉴트럴', [['화이트', '#F5F3EE'], ['아이보리', '#EDE4CF'], ['샌드', '#D8C9A8'], ['실버', '#C4C7CC'], ['웜 그레이', '#A39E93'],
+    ['쿨 그레이', '#8E949C'], ['그래파이트', '#55575C'], ['초콜릿', '#4A3428'], ['차콜', '#2B2B30'], ['블랙', '#141416']]],
+].map(([group, list]) => [group, list.map(([name, color]) => tapeColor(name, color))]);
+
+// 예전 색(색 토큰)으로 저장된 테이프를 새 색으로 바꾼다
+const OLD_TAPE_COLORS = {
+  'var(--accent)': '#D9692E', 'var(--ai)': '#2F7F7A', 'var(--paper)': '#E8DFCB',
+  'var(--lcd)': '#D6A53F', 'var(--pen)': '#34497A', 'var(--ink)': '#2B2B30',
+};
+function migrateTapeColor(tape) {
+  const color = OLD_TAPE_COLORS[tape.color] || (tape.color?.startsWith('#') ? null : TAPE_COLORS[0].color);
+  if (!color) return false;
+  Object.assign(tape, { color, ink: inkFor(color) });
+  return true;
+}
 const ED_LIB_LIMIT = 300; // 라이브러리 목록은 이만큼만 그리고, 나머지는 검색으로 찾는다
 
 // 곡 순서를 지키면서 두 면의 재생 시간 차이가 가장 작은 곳에서 자른다(F-16)
@@ -2394,13 +2433,30 @@ const Editor = {
   confirmDelete: false,
 
   init() {
-    const box = $('edColors');
-    TAPE_COLORS.forEach((c, i) => {
-      const input = Object.assign(el('input', 'swatch', box), { type: 'radio', name: 'edColor', value: String(i) });
+    // 기본 색과 팔레트 색은 한 라디오 묶음(edColor)이라 하나만 골라진다
+    const swatch = (c, parent) => {
+      const input = Object.assign(el('input', 'swatch', parent), { type: 'radio', name: 'edColor', value: c.color });
       input.style.background = c.color;
       input.setAttribute('aria-label', c.name);
-      input.addEventListener('change', () => { Object.assign(this.draft, { color: c.color, ink: c.ink }); });
-    });
+      input.addEventListener('change', () => {
+        Object.assign(this.draft, { color: c.color, ink: c.ink });
+        this.renderColor();
+        if (parent !== $('edColors')) this.togglePalette(false);
+      });
+    };
+    TAPE_COLORS.forEach((c) => swatch(c, $('edColors')));
+    const more = el('button', 'swatch swatch-more', $('edColors'));
+    Object.assign(more, { type: 'button', id: 'edMoreColors' });
+    more.setAttribute('aria-label', '더 많은 색 고르기');
+    more.setAttribute('aria-controls', 'edPalette');
+    more.addEventListener('click', () => this.togglePalette());
+    for (const [group, list] of TAPE_PALETTE) {
+      const row = el('div', 'ed-palette-row', $('edPalette'));
+      row.setAttribute('role', 'group');
+      row.setAttribute('aria-label', group);
+      el('span', 'ed-palette-name', row).textContent = group;
+      list.forEach((c) => swatch(c, row));
+    }
     $('edTitle').addEventListener('input', (e) => { this.draft.title = e.target.value; });
     $('edLength').addEventListener('change', (e) => { this.draft.length = e.target.value; this.render(); });
     $('edSearch').addEventListener('input', () => this.renderLibrary());
@@ -2435,13 +2491,30 @@ const Editor = {
     $('edTitle').value = this.draft.title;
     $('edLength').value = this.draft.length;
     $('edSearch').value = '';
-    for (const input of $('edColors').querySelectorAll('input')) input.checked = TAPE_COLORS[input.value].color === this.draft.color;
+    this.togglePalette(false);
+    this.renderColor();
     this.render();
     $('tapeEditor').showModal();
     $('edTitle').focus();
   },
 
   close() { $('tapeEditor').close(); },
+
+  togglePalette(open = $('edPalette').hidden) {
+    $('edPalette').hidden = !open;
+    $('edMoreColors').setAttribute('aria-expanded', String(open));
+  },
+
+  // 고른 색에 표시하고, 기본 색이 아니면 "더 많은 색" 버튼을 그 색으로 칠한다
+  renderColor() {
+    const color = this.draft.color;
+    for (const input of $('tapeEditor').querySelectorAll('input[name="edColor"]')) input.checked = input.value === color;
+    const custom = !TAPE_COLORS.some((c) => c.color === color);
+    const more = $('edMoreColors');
+    more.classList.toggle('is-custom', custom);
+    more.style.background = custom ? color : '';
+    more.setAttribute('aria-pressed', String(custom));
+  },
 
   sideOf(id) { return this.draft.A.includes(id) ? 'A' : this.draft.B.includes(id) ? 'B' : null; },
 
@@ -2654,10 +2727,11 @@ const RESPONSE_SCHEMA = {
   },
 };
 
-// AI가 고른 색 이름을 테이프 색(TAPE_COLORS 순서)으로 바꾼다
+// AI가 고른 색 이름을 테이프 색(기본 5색, 검정·회색은 팔레트의 차콜)으로 바꾼다
 const COLOR_WORDS = [
-  [0, /orange|주황|coral|red|빨/i], [1, /teal|green|cyan|mint|청록|초록/i], [2, /ivory|white|cream|beige|아이보리|흰/i],
-  [3, /amber|yellow|gold|호박|노랑|금/i], [4, /blue|navy|indigo|파랑|남색/i], [5, /black|dark|gray|grey|먹|검/i],
+  [TAPE_COLORS[0], /orange|주황|coral|red|빨/i], [TAPE_COLORS[1], /teal|green|cyan|mint|청록|초록/i],
+  [TAPE_COLORS[2], /ivory|white|cream|beige|아이보리|흰/i], [TAPE_COLORS[3], /amber|yellow|gold|호박|노랑|금/i],
+  [TAPE_COLORS[4], /blue|navy|indigo|파랑|남색/i], [tapeColor('차콜', '#2B2B30'), /black|dark|gray|grey|먹|검/i],
 ];
 
 class CuratorError extends Error {
@@ -2810,8 +2884,8 @@ const Curator = {
     const tapes = [];
     for (const [n, raw] of json.tapes.entries()) {
       const tape = { include: true, title: String(raw.label || '').trim().slice(0, LABEL_MAX) || `AI 믹스 ${n + 1}`, A: [], B: [], dropped: [] };
-      const colorIdx = COLOR_WORDS.find(([, re]) => re.test(raw.color || ''))?.[0] ?? (shelfTapes.length + n) % TAPE_COLORS.length;
-      Object.assign(tape, { color: TAPE_COLORS[colorIdx].color, ink: TAPE_COLORS[colorIdx].ink });
+      const pick = COLOR_WORDS.find(([, re]) => re.test(raw.color || ''))?.[0] ?? TAPE_COLORS[(shelfTapes.length + n) % TAPE_COLORS.length];
+      Object.assign(tape, { color: pick.color, ink: pick.ink });
       for (const [side, key] of [['A', 'sideA'], ['B', 'sideB']]) {
         for (const item of Array.isArray(raw[key]) ? raw[key] : []) {
           const id = idMap.get(String(item?.id));
