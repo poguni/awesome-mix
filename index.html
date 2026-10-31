@@ -262,8 +262,30 @@ button.track { cursor: pointer; }
   background: var(--tape-color, var(--accent)); color: var(--tape-ink, var(--ink)); cursor: pointer;
   transition: transform 0.2s ease; box-shadow: inset -6px 0 0 rgba(0, 0, 0, 0.12);
 }
-.spine:hover, .spine:focus-visible { transform: translateY(-8px); }
-.spine.in-deck { transform: translateY(-18px); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
+.spine-slot { position: relative; display: flex; }
+.spine-slot:hover .spine, .spine-slot:focus-within .spine { transform: translateY(-8px); }
+.spine-slot.in-deck .spine { transform: translateY(-18px); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
+/* 책등 위 도구(편집·지우기·옮기기): 올리거나 포커스하면 나타난다 */
+.spine-tools {
+  position: absolute; top: 4px; left: 50%; margin-left: -32px; width: 64px; padding: 4px; border-radius: 10px;
+  display: grid; grid-template-columns: repeat(2, 26px); gap: 4px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent); opacity: 0; pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.2s ease;
+}
+.spine-slot:hover .spine-tools, .spine-slot:focus-within .spine-tools { opacity: 1; pointer-events: auto; transform: translateY(-8px); }
+.spine-slot.in-deck .spine-tools { transform: translateY(-18px); }
+.spine-tools button {
+  width: 26px; height: 26px; padding: 0; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--panel); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.spine-tools button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.spine-tools button:disabled { opacity: 0.35; cursor: not-allowed; }
+/* 끌어서 옮길 때 끼워질 자리 */
+.spine-slot.is-drop-before::before, .shelf.is-drop-end::after {
+  content: ''; width: 4px; border-radius: 2px; background: var(--lcd);
+}
+.spine-slot.is-drop-before::before { position: absolute; left: -7px; top: 20px; bottom: 0; }
+.shelf.is-drop-end::after { align-self: stretch; margin-top: 20px; }
 .spine-len { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
 .spine-title { writing-mode: vertical-rl; flex: 1; min-height: 0; line-height: 1; overflow: hidden; white-space: nowrap; }
 .spine-ai {
@@ -415,7 +437,7 @@ button.track { cursor: pointer; }
 .setting-radio small { grid-column: 2; }
 
 @media (prefers-reduced-motion: reduce) {
-  .key, .spine { transition: none; }
+  .key, .spine, .spine-tools { transition: none; }
 }
 </style>
 </head>
@@ -639,6 +661,15 @@ button.track { cursor: pointer; }
   <div class="setting-actions">
     <button type="button" class="btn" id="consentNo">취소</button>
     <button type="button" class="btn btn-primary" id="consentYes">보내기</button>
+  </div>
+</dialog>
+
+<dialog class="settings" id="deleteDialog" aria-labelledby="deleteTitle">
+  <h2 id="deleteTitle">테이프를 지울까요?</h2>
+  <p id="deleteText"></p>
+  <div class="setting-actions">
+    <button type="button" class="btn" id="deleteNo">취소</button>
+    <button type="button" class="btn btn-danger" id="deleteYes">지우기</button>
   </div>
 </dialog>
 
@@ -2177,13 +2208,24 @@ const Reels = {
 };
 
 /* ===== Shelf: 테이프 목록, 끌어서 넣기, 편집기 ===== */
-const spines = new Map(); // 테이프 id → 책등 버튼
+const spines = new Map(); // 테이프 id → 책등 칸(책등 버튼 + 도구)
 const shelfEmpty = $('shelf').querySelector('.shelf-empty'); // 선반이 비었을 때의 안내
 const DRAG_TRACK = 'application/x-awesome-track';
 const DRAG_TAPE = 'application/x-awesome-tape';
+const shelfOrder = () => [...shelfTapes].sort((a, b) => a.order - b.order);
+
+const svgIcon = (d) => `<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+const SPINE_TOOLS = [
+  ['edit', svgIcon('M4 20h4L19 9l-4-4L4 16zM14 6l4 4')],
+  ['delete', svgIcon('M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13')],
+  ['left', svgIcon('M15 5l-7 7 7 7')],
+  ['right', svgIcon('M9 5l7 7-7 7')],
+];
 
 function makeSpine(tape) {
-  const spine = el('button', 'spine');
+  const slot = el('div', 'spine-slot');
+  slot.dataset.id = tape.id;
+  const spine = el('button', 'spine', slot);
   spine.type = 'button';
   spine.draggable = true; // 데크 위로 끌어다 놓아도 넣는다(F-42)
   spine.addEventListener('dragstart', (e) => {
@@ -2198,11 +2240,95 @@ function makeSpine(tape) {
       loadTapeToDeck(tape.id);
     }
   });
-  return spine;
+  const tools = el('div', 'spine-tools', slot);
+  for (const [action, icon] of SPINE_TOOLS) {
+    const b = el('button', '', tools);
+    b.type = 'button';
+    b.dataset.action = action;
+    b.innerHTML = icon;
+  }
+  tools.addEventListener('click', (e) => {
+    const action = e.target.closest('button')?.dataset.action;
+    const t = tapeById(tape.id);
+    if (!action || !t) return;
+    if (action === 'edit') Editor.open(t.id);
+    else if (action === 'delete') confirmDeleteTape(t);
+    else {
+      moveTape(t.id, shelfOrder().indexOf(t) + (action === 'left' ? -1 : 1));
+      // 다시 그리면 포커스가 풀리므로 같은 버튼(끝에 닿았으면 책등)으로 돌려놓는다
+      const again = tools.querySelector(`[data-action="${action}"]`);
+      (again.disabled ? spine : again).focus();
+    }
+  });
+  return slot;
+}
+
+// 선반에서 to번째 자리로 옮기고, 바뀐 순서를 저장한다
+function moveTape(id, to) {
+  const tapes = shelfOrder();
+  const from = tapes.findIndex((t) => t.id === id);
+  to = Math.max(0, Math.min(to, tapes.length - 1));
+  if (from < 0 || from === to) return;
+  tapes.splice(to, 0, ...tapes.splice(from, 1));
+  tapes.forEach((t, i) => { if (t.order !== i) { t.order = i; saveTape(t); } });
+  renderShelf();
+}
+
+function deleteTape(tape) {
+  shelfTapes.splice(shelfTapes.indexOf(tape), 1);
+  Store.delete('tapes', tape.id);
+  if (viewTapeId === tape.id) viewTapeId = shelfTapes[0]?.id || null;
+  showMessage(`"${tape.title}" 테이프를 지웠습니다.`);
+  render();
+}
+
+// 선반의 지우기 버튼: 확인 창을 거쳐 지운다(데크에 든 테이프는 버튼이 막혀 있다)
+function confirmDeleteTape(tape) {
+  if (deck.loaded && deck.tapeId === tape.id) return;
+  const dialog = $('deleteDialog');
+  $('deleteText').textContent = `"${tape.title}" 테이프를 선반에서 지웁니다. 음원 파일은 그대로 남습니다.`;
+  $('deleteYes').onclick = () => { dialog.close(); deleteTape(tape); };
+  $('deleteNo').onclick = () => dialog.close();
+  dialog.showModal();
+  $('deleteNo').focus();
+}
+
+// 책등을 선반 안에서 끌어 놓으면 순서를 바꾼다. 칸의 왼쪽 절반이면 그 앞에 놓는다.
+function bindShelfDrop() {
+  const shelf = $('shelf');
+  const clear = () => {
+    shelf.classList.remove('is-drop-end');
+    shelf.querySelectorAll('.is-drop-before').forEach((s) => s.classList.remove('is-drop-before'));
+  };
+  const indexAt = (x) => {
+    const slots = [...shelf.querySelectorAll('.spine-slot')];
+    const i = slots.findIndex((s) => { const b = s.getBoundingClientRect(); return x < b.left + b.width / 2; });
+    return i < 0 ? slots.length : i;
+  };
+  shelf.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer.types.includes(DRAG_TAPE)) return;
+    e.preventDefault();
+    clear();
+    const i = indexAt(e.clientX);
+    const slots = shelf.querySelectorAll('.spine-slot');
+    if (i < slots.length) slots[i].classList.add('is-drop-before');
+    else shelf.classList.add('is-drop-end');
+  });
+  shelf.addEventListener('dragleave', (e) => { if (!shelf.contains(e.relatedTarget)) clear(); });
+  shelf.addEventListener('dragend', clear);
+  shelf.addEventListener('drop', (e) => {
+    const id = e.dataTransfer.getData(DRAG_TAPE);
+    clear();
+    if (!id) return;
+    e.preventDefault();
+    const i = indexAt(e.clientX);
+    const from = shelfOrder().findIndex((t) => t.id === id);
+    moveTape(id, from < i ? i - 1 : i);
+  });
 }
 
 function renderShelf() {
-  const tapes = [...shelfTapes].sort((a, b) => a.order - b.order);
+  const tapes = shelfOrder();
   setText($('shelfCount'), `${tapes.length}개` + (library.size ? ` · 라이브러리 ${library.size}곡` : '')
     + (scan.done < scan.total ? ` · 테이프 녹음 중… ${scan.done}/${scan.total}` : ''));
   for (const id of spines.keys()) if (!tapeById(id)) spines.delete(id);
@@ -2210,20 +2336,30 @@ function renderShelf() {
     if (!$('shelf').contains(shelfEmpty)) $('shelf').replaceChildren(shelfEmpty);
     return;
   }
-  const list = tapes.map((tape) => {
+  const list = tapes.map((tape, i) => {
     if (!spines.has(tape.id)) spines.set(tape.id, makeSpine(tape));
-    const spine = spines.get(tape.id);
+    const slot = spines.get(tape.id);
+    const spine = slot.querySelector('.spine');
     const inDeck = deck.loaded && deck.tapeId === tape.id;
     spine.style.setProperty('--tape-color', tape.color);
     spine.style.setProperty('--tape-ink', tape.ink || 'var(--ink)');
-    spine.classList.toggle('in-deck', inDeck);
+    slot.classList.toggle('in-deck', inDeck);
+    const tool = (action) => slot.querySelector(`.spine-tools [data-action="${action}"]`);
+    tool('edit').setAttribute('aria-label', `${tape.title} 편집`);
+    tool('delete').setAttribute('aria-label', `${tape.title} 지우기`);
+    tool('delete').disabled = inDeck;
+    tool('delete').title = inDeck ? '데크에 든 테이프는 꺼낸 뒤 지울 수 있습니다' : '';
+    tool('left').setAttribute('aria-label', `${tape.title} 왼쪽으로 옮기기`);
+    tool('left').disabled = i === 0;
+    tool('right').setAttribute('aria-label', `${tape.title} 오른쪽으로 옮기기`);
+    tool('right').disabled = i === tapes.length - 1;
     setText(spine.querySelector('.spine-len'), tape.length);
     const title = spine.querySelector('.spine-title');
     setText(title, tape.title);
     title.className = 'spine-title ' + handClass(tape.title);
     spine.querySelector('.spine-ai').hidden = tape.made !== 'ai';
     spine.setAttribute('aria-label', `${tape.title}, ${tape.length}` + (tape.made === 'ai' ? ', AI가 만든 테이프' : '') + (inDeck ? ', 데크에 들어 있음' : ''));
-    return spine;
+    return slot;
   });
   const shelf = $('shelf');
   if (list.length !== shelf.children.length || list.some((s, i) => shelf.children[i] !== s)) shelf.replaceChildren(...list);
@@ -2479,12 +2615,8 @@ const Editor = {
       $('edDelete').textContent = '한 번 더 누르면 지웁니다';
       return;
     }
-    shelfTapes.splice(shelfTapes.indexOf(tape), 1);
-    Store.delete('tapes', tape.id);
-    if (viewTapeId === tape.id) viewTapeId = shelfTapes[0]?.id || null;
     this.close();
-    showMessage(`"${tape.title}" 테이프를 지웠습니다.`);
-    render();
+    deleteTape(tape);
   },
 };
 
@@ -3168,6 +3300,7 @@ function bindEvents() {
     e.stopPropagation();
     loadTapeToDeck(id);
   });
+  bindShelfDrop();
   Editor.init();
   Curator.init();
   $('newTape').addEventListener('click', () => Editor.open());
